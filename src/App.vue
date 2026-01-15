@@ -1,27 +1,42 @@
 <template>
   <div id="app">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <EditArea />
+
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+// import HelloWorld from './components/HelloWorld.vue'
+import EditArea from './components/EditArea/index.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    // HelloWorld,
+    EditArea
   }
 }
 </script>
 
 <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  height: 100%;
+  overflow: hidden;
+}
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 </style>

@@ -23,11 +23,12 @@ export default {
   data() {
     return {
       ListItem: ListItem,
-      originalData: Array.from({ length: 100 }, (_, i) => ({
+      originalData: Array.from({ length: 20 }, (_, i) => ({
         id: i,
         text: `Item ${i}`,
+        color: `#${Math.floor(Math.random()*16777215).toString(16)}`,
       })),
-      scrollSpeed: 1, // 控制滚动速度
+      scrollSpeed: 2, // 控制滚动速度
       animationFrameId: null, // 记录 requestAnimationFrame ID
       isResetting: false, // 是否正在重置滚动位置
       lastScrollTop: 0, // 记录上次滚动位置
@@ -86,5 +87,6 @@ export default {
 .list {
   height: 100%;
   overflow-y: auto;
+  /* scroll-behavior: smooth; */
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-    <div class="item">{{ source.text }}</div>
+    <div class="item" :style="{ backgroundColor: source.color }">{{ source.text }}</div>
   </template>
   
   <script>
