@@ -19,14 +19,43 @@ export default {
       imageWidth: 0,
       imageHeight: 0,
       backgroundImage: null,
+      containerRef: null,
     };
+  },
+  computed: {
+    imageUrl() {
+      return this.$store.state.uploadedImage;
+    },
+  },
+  watch: {
+    imageUrl: {
+      immediate: false,
+      handler(newUrl) {
+        if (newUrl && this.canvas) {
+          this.loadImageFromUrl(newUrl);
+        }
+      },
+    },
   },
   mounted() {
     this.initCanvas();
   },
   beforeDestroy() {
+    // 清理窗口事件监听器
     window.removeEventListener('resize', this.handleResize);
+    
+    // 清理容器事件监听器
+    if (this.containerRef) {
+      this.containerRef.removeEventListener('dragover', this.handleDragOver);
+      this.containerRef.removeEventListener('drop', this.handleDrop);
+    }
+    
+    // 清理画布事件监听器
     if (this.canvas) {
+      this.canvas.off('selection:created', this.handleSelection);
+      this.canvas.off('selection:updated', this.handleSelection);
+      this.canvas.off('selection:cleared', this.handleSelectionCleared);
+      this.canvas.off('object:modified', this.handleObjectModified);
       this.canvas.dispose();
     }
   },
@@ -38,35 +67,17 @@ export default {
       
       if (!canvasEl || !container) return;
       
-      // 先加载图片获取尺寸，再初始化画布
-      const img = new Image();
-      // img.src = require('@/assets/white.png');
-      img.src = require('@/assets/Group2118723994.png');
-      
-      await new Promise((resolve, reject) => {
-        img.onload = () => {
-          // 保存图片尺寸
-          this.imageWidth = img.width;
-          this.imageHeight = img.height;
-          
-          console.log('图片尺寸:', img.width, 'x', img.height);
-          
-          // 使用图片尺寸初始化画布
-          this.canvas = new Canvas(canvasEl, {
-            width: img.width,
-            height: img.height,
-            backgroundColor: '#f5f5f5',
-          });
-          
-          console.log('画布初始化完成，尺寸:', this.canvas.width, 'x', this.canvas.height);
-          
-          resolve(img);
-        };
-        img.onerror = reject;
+      // 初始化画布，使用容器尺寸（如果没有图片）
+      this.canvas = new Canvas(canvasEl, {
+        width: container.clientWidth || 800,
+        height: container.clientHeight || 600,
+        backgroundColor: '#f5f5f5',
       });
-
-      // 加载背景图片，传入已加载的图片对象
-      await this.loadBackgroundImage(img);
+      
+      // 如果有传入的图片URL，加载它
+      if (this.imageUrl) {
+        await this.loadImageFromUrl(this.imageUrl);
+      }
 
       // 监听画布大小变化（仅在背景图片未加载时调整）
       window.addEventListener('resize', this.handleResize);
@@ -82,6 +93,9 @@ export default {
       // 监听拖拽放置
       container.addEventListener('dragover', this.handleDragOver);
       container.addEventListener('drop', this.handleDrop);
+
+      // 保存容器引用，用于清理
+      this.containerRef = container;
 
       // 将 canvas 实例传递给父组件
       this.$emit('canvas-ready', this.canvas);
@@ -224,6 +238,45 @@ export default {
       };
       this.$emit('object-modified', updatedData);
     },
+    // 从 URL 加载图片
+    async loadImageFromUrl(imageUrl) {
+      try {
+        // 确保画布已初始化
+        if (!this.canvas) {
+          console.warn('画布未初始化，等待初始化完成...');
+          await this.$nextTick();
+          // 如果还是没有，尝试初始化
+          if (!this.canvas) {
+            await this.initCanvas();
+          }
+        }
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous'; // 允许跨域
+        
+        await new Promise((resolve, reject) => {
+          img.onload = () => {
+            console.log('图片加载成功，尺寸:', img.width, 'x', img.height);
+            resolve();
+          };
+          img.onerror = (error) => {
+            console.error('图片加载失败:', error);
+            reject(error);
+          };
+          img.src = imageUrl;
+        });
+
+        // 确保画布存在后再加载背景
+        if (this.canvas) {
+          await this.loadBackgroundImage(img);
+        } else {
+          console.error('画布仍未初始化，无法加载图片');
+        }
+      } catch (error) {
+        console.error('从URL加载图片失败:', error);
+        alert('图片加载失败: ' + error.message);
+      }
+    },
     async loadBackgroundImage(img) {
       try {
         if (!img || !this.canvas) {
@@ -295,12 +348,13 @@ export default {
           originY: 'top',
         });
         
+        // 保存图片尺寸
+        this.imageWidth = img.width;
+        this.imageHeight = img.height;
+        
         this.canvas.renderAll();
         console.log('背景图片设置完成，画布尺寸:', this.canvas.width, 'x', this.canvas.height);
         console.log('背景图片对象尺寸:', fabricImage.width, 'x', fabricImage.height);
-        console.log('背景图片位置:', 'left:', fabricImage.left, 'top:', fabricImage.top);
-        console.log('背景图片原点:', 'originX:', fabricImage.originX, 'originY:', fabricImage.originY);
-        console.log('背景图片缩放:', 'scaleX:', fabricImage.scaleX, 'scaleY:', fabricImage.scaleY);
         
         // 标记背景图片已加载
         this.backgroundImageLoaded = true;

@@ -1,20 +1,12 @@
 <template>
   <div id="app">
-    <EditArea />
-
+    <router-view />
   </div>
 </template>
 
 <script>
-// import HelloWorld from './components/HelloWorld.vue'
-import EditArea from './components/EditArea/index.vue'
-
 export default {
   name: 'App',
-  components: {
-    // HelloWorld,
-    EditArea
-  }
 }
 </script>
 

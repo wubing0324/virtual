@@ -28,76 +28,102 @@ export default {
       opencvLoaded: false,
     };
   },
+  computed: {
+    imageSrc() {
+      return this.$store.state.uploadedImage;
+    },
+  },
+  watch: {
+    imageSrc: {
+      immediate: true,
+      async handler(newSrc) {
+        if (newSrc) {
+          await this.loadImage(newSrc);
+        }
+      },
+    },
+  },
   async mounted() {
-    await this.loadImage();
     await this.loadOpenCV();
   },
   methods: {
     async loadOpenCV() {
       // 直接使用 CDN 方式加载，避免 webpack 打包问题
       return new Promise((resolve, reject) => {
-        if (window.cv) {
+        // 如果已经加载过，直接使用
+        if (window.cv && window.cv.imread) {
           cv = window.cv;
-          if (cv.onRuntimeInitialized) {
-            cv.onRuntimeInitialized = () => {
-              console.log('OpenCV.js 加载完成');
-              this.opencvLoaded = true;
-              resolve();
-            };
-          } else {
-            this.opencvLoaded = true;
-            resolve();
-          }
+          this.opencvLoaded = true;
+          console.log('OpenCV.js 已加载');
+          resolve();
           return;
         }
 
-        // 检查是否已经加载过脚本
+        // 检查是否已经加载过脚本但还在初始化
         const existingScript = document.querySelector('script[src*="opencv.js"]');
         if (existingScript) {
-          existingScript.addEventListener('load', () => {
-            cv = window.cv;
-            if (cv.onRuntimeInitialized) {
-              cv.onRuntimeInitialized = () => {
-                console.log('OpenCV.js 加载完成');
-                this.opencvLoaded = true;
-                resolve();
-              };
-            } else {
+          // 等待脚本加载完成
+          const checkInterval = setInterval(() => {
+            if (window.cv && window.cv.imread) {
+              cv = window.cv;
               this.opencvLoaded = true;
+              console.log('OpenCV.js 加载完成');
+              clearInterval(checkInterval);
               resolve();
             }
-          });
+          }, 100);
+          
+          // 设置超时
+          setTimeout(() => {
+            if (!this.opencvLoaded) {
+              clearInterval(checkInterval);
+              reject(new Error('OpenCV.js 加载超时'));
+            }
+          }, 30000);
           return;
         }
 
+        // 创建新的脚本标签
         const script = document.createElement('script');
         script.src = 'https://docs.opencv.org/4.x/opencv.js';
         script.async = true;
+        
         script.onload = () => {
-          cv = window.cv;
-          if (cv.onRuntimeInitialized) {
-            cv.onRuntimeInitialized = () => {
-              console.log('OpenCV.js 加载完成');
+          // 等待 OpenCV 初始化完成
+          const checkInterval = setInterval(() => {
+            if (window.cv && window.cv.imread) {
+              cv = window.cv;
               this.opencvLoaded = true;
+              console.log('OpenCV.js 加载完成');
+              clearInterval(checkInterval);
               resolve();
-            };
-          } else {
-            this.opencvLoaded = true;
-            resolve();
-          }
+            }
+          }, 100);
+          
+          // 设置超时
+          setTimeout(() => {
+            if (!this.opencvLoaded) {
+              clearInterval(checkInterval);
+              reject(new Error('OpenCV.js 初始化超时'));
+            }
+          }, 30000);
         };
+        
         script.onerror = () => {
           console.error('OpenCV.js 加载失败');
           reject(new Error('OpenCV.js 加载失败'));
         };
+        
         document.head.appendChild(script);
       });
     },
-    async loadImage() {
+    async loadImage(src) {
+      if (!src) return;
+      
       try {
         const img = new Image();
         img.crossOrigin = 'anonymous';
-        img.src = require('@/assets/Group2118723994.png');
+        img.src = src;
         
         await new Promise((resolve, reject) => {
           img.onload = resolve;
@@ -124,11 +150,18 @@ export default {
         return;
       }
 
-      if (!this.opencvLoaded || !cv || !cv.imread) {
-        alert('OpenCV 未加载，请稍候再试');
-        await this.loadOpenCV();
-        if (!cv || !cv.imread) {
-          alert('OpenCV 加载失败，请刷新页面重试');
+      // 检查 OpenCV 是否已加载并可用
+      if (!this.opencvLoaded || !cv || typeof cv.imread !== 'function') {
+        try {
+          await this.loadOpenCV();
+        } catch (error) {
+          alert('OpenCV 加载失败: ' + error.message);
+          return;
+        }
+        
+        // 再次检查
+        if (!cv || typeof cv.imread !== 'function') {
+          alert('OpenCV 未正确初始化，请刷新页面重试');
           return;
         }
       }
@@ -143,46 +176,52 @@ export default {
         cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
         // 使用 Canny 边缘检测，更好地检测车位框
+        // 对于相邻车位，使用更精细的边缘检测，避免合并
         const edges = new cv.Mat();
-        cv.Canny(gray, edges, 50, 150);
+        cv.Canny(gray, edges, 50, 150); // 提高阈值，只检测明显的边缘
 
-        // 轻微的形态学操作，连接断开的边缘，但不要过度合并
-        const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(2, 2));
-        const dilated = new cv.Mat();
-        cv.dilate(edges, dilated, kernel, new cv.Point(-1, -1), 1);
-
-        // 查找所有轮廓（包括嵌套的）
+        // 不使用形态学操作，直接查找轮廓，避免合并相邻车位
+        // 查找所有轮廓（使用 RETR_TREE 获取所有轮廓，包括内部轮廓）
         const contours = new cv.MatVector();
         const hierarchy = new cv.Mat();
-        cv.findContours(dilated, contours, hierarchy, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
+        cv.findContours(edges, contours, hierarchy, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
+        
+        // 清理临时资源
+        edges.delete();
 
         // 识别矩形框（车位）
-        const allSpaces = [];
-        const minArea = 1000; // 最小面积阈值
-        const maxArea = src.rows * src.cols * 0.2; // 最大面积阈值
+        const minArea = 500; // 降低最小面积阈值，支持更小的车位
+        const maxArea = src.rows * src.cols * 0.05; // 大幅降低最大面积阈值，避免识别到聚集的整体
+        const typicalParkingArea = 1000; // 典型单个车位的面积（可根据实际情况调整）
         
+        // 第一遍：收集所有候选轮廓（不删除轮廓对象，只保存信息）
+        const candidates = [];
         for (let i = 0; i < contours.size(); i++) {
           const cnt = contours.get(i);
           const area = cv.contourArea(cnt);
           
           // 过滤面积太小或太大的区域
           if (area < minArea || area > maxArea) {
-            cnt.delete();
             continue;
           }
 
+          // 使用 boundingRect 获取轴对齐矩形（更简单，避免旋转计算问题）
           const rect = cv.boundingRect(cnt);
           
           // 过滤太小的区域（基于宽高）
-          if (rect.width < 40 || rect.height < 40) {
-            cnt.delete();
+          const minDim = Math.min(rect.width, rect.height);
+          const maxDim = Math.max(rect.width, rect.height);
+          if (minDim < 30 || maxDim < 50) {
             continue;
           }
 
-          // 计算宽高比，车位通常是矩形（宽高比在合理范围内）
+          // 计算宽高比，支持横向和纵向矩形
           const aspectRatio = rect.width / rect.height;
-          if (aspectRatio < 0.5 || aspectRatio > 2.5) {
-            cnt.delete();
+          
+          // 放宽宽高比限制，支持纵向矩形（高宽比可以到 4:1）
+          // 横向矩形：宽高比 1:1 到 3:1
+          // 纵向矩形：高宽比 1:1 到 4:1
+          if (aspectRatio < 0.25 || aspectRatio > 3.0) {
             continue;
           }
 
@@ -193,8 +232,12 @@ export default {
 
           // 只接受四边形（矩形、平行四边形、梯形）
           if (approx.rows >= 4 && approx.rows <= 6) {
-            // 计算旋转角度
-            const angle = this.calculateAngle(approx);
+            // 使用 minAreaRect 计算旋转角度
+            const rotatedRect = cv.minAreaRect(cnt);
+            let angle = Math.round(rotatedRect.angle);
+            // 规范化角度到 0-90 度
+            if (angle < -45) angle += 90;
+            if (angle > 45) angle -= 90;
             
             // 计算轮廓的凸包，更精确地判断是否为矩形
             const hull = new cv.Mat();
@@ -203,8 +246,8 @@ export default {
             const extent = area / hullArea; // 轮廓面积与凸包面积的比值
             
             // 如果是矩形，extent 应该接近 1.0
-            if (extent > 0.7) {
-              allSpaces.push({
+            if (extent > 0.65) {
+              candidates.push({
                 x: rect.x,
                 y: rect.y,
                 width: rect.width,
@@ -214,7 +257,7 @@ export default {
                 area: area,
                 centerX: rect.x + rect.width / 2,
                 centerY: rect.y + rect.height / 2,
-                contour: cnt,
+                index: i,
               });
             }
             
@@ -222,11 +265,51 @@ export default {
           }
 
           approx.delete();
-          cnt.delete();
+        }
+        
+        // 清理轮廓资源
+        for (let i = 0; i < contours.size(); i++) {
+          contours.get(i).delete();
+        }
+        
+        // 第二遍：智能分割大的轮廓
+        // 如果一个轮廓的面积远大于典型车位面积，尝试分割它
+        const finalCandidates = [];
+        for (const candidate of candidates) {
+          // 如果面积远大于典型车位面积（可能是多个车位的组合）
+          if (candidate.area > typicalParkingArea * 1.5) {
+            // 检查是否有其他候选轮廓在这个轮廓内部
+            const innerCandidates = candidates.filter(other => {
+              if (other.index === candidate.index) return false;
+              
+              // 检查 other 的中心点是否在 candidate 内部
+              const isInside = (
+                other.centerX >= candidate.x &&
+                other.centerX <= candidate.x + candidate.width &&
+                other.centerY >= candidate.y &&
+                other.centerY <= candidate.y + candidate.height
+              );
+              
+              // 检查 other 的面积是否明显小于 candidate（说明是内部轮廓）
+              return isInside && other.area < candidate.area * 0.7;
+            });
+            
+            // 如果包含2个或以上的内部轮廓，说明这是多个车位的组合
+            // 保留内部的小轮廓，丢弃大的组合轮廓
+            if (innerCandidates.length >= 2) {
+              console.log(`分割大的组合轮廓: 面积=${candidate.area}, 包含${innerCandidates.length}个内部轮廓`);
+              // 将内部轮廓添加到最终列表
+              finalCandidates.push(...innerCandidates);
+              continue; // 跳过大的组合轮廓
+            }
+          }
+          
+          finalCandidates.push(candidate);
         }
 
         // 去重：使用非极大值抑制（NMS）去除重叠的检测框
-        const spaces = this.nonMaxSuppression(allSpaces, 0.3);
+        // 使用更低的阈值，避免过度合并相邻车位
+        const spaces = this.nonMaxSuppression(finalCandidates, 0.15);
 
         // 对识别到的车位进行 OCR 识别（批量处理，提高效率）
         console.log(`找到 ${spaces.length} 个候选车位，开始 OCR 识别...`);
@@ -254,9 +337,6 @@ export default {
         // 清理资源
         src.delete();
         gray.delete();
-        edges.delete();
-        dilated.delete();
-        kernel.delete();
         contours.delete();
         hierarchy.delete();
 

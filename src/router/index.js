@@ -1,0 +1,27 @@
+import Vue from 'vue';
+import VueRouter from 'vue-router';
+import ImageUpload from '@/components/ImageUpload.vue';
+import EditArea from '@/components/EditArea/index.vue';
+
+Vue.use(VueRouter);
+
+const routes = [
+  {
+    path: '/',
+    name: 'ImageUpload',
+    component: ImageUpload,
+  },
+  {
+    path: '/edit',
+    name: 'EditArea',
+    component: EditArea,
+  },
+];
+
+const router = new VueRouter({
+  mode: 'history',
+  base: process.env.BASE_URL,
+  routes,
+});
+
+export default router;
