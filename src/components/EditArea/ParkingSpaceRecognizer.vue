@@ -288,30 +288,38 @@ export default {
 
             // Accept 4-6 vertices (roughly rectangular)
             if (approx.rows >= 4 && approx.rows <= 8) { // Allow slightly more complex shapes
-              const rotatedRect = cv.minAreaRect(cnt);
-              let angle = Math.round(rotatedRect.angle);
-              if (angle < -45) angle += 90;
-              if (angle > 45) angle -= 90;
-              
-              const hull = new cv.Mat();
-              cv.convexHull(approx, hull);
-              const hullArea = cv.contourArea(hull);
-              const extent = area / hullArea;
-              
-              if (extent > 0.60) { // Relaxed extent
-                candidates.push({
-                  x: rect.x,
-                  y: rect.y,
-                  width: rect.width,
-                  height: rect.height,
-                  angle: angle,
-                  number: null,
-                  area: area,
-                  centerX: rect.x + rect.width / 2,
-                  centerY: rect.y + rect.height / 2,
-                  id: Math.random().toString(36).substr(2, 9), // Unique ID
-                });
-              }
+                  const rotatedRect = cv.minAreaRect(cnt);
+                  let angle = Math.round(rotatedRect.angle);
+                  // Keep raw values for accurate splitting later
+                  const rawAngle = rotatedRect.angle;
+                  const rotatedWidth = rotatedRect.size.width;
+                  const rotatedHeight = rotatedRect.size.height;
+
+                  if (angle < -45) angle += 90;
+                  if (angle > 45) angle -= 90;
+                  
+                  const hull = new cv.Mat();
+                  cv.convexHull(approx, hull);
+                  const hullArea = cv.contourArea(hull);
+                  const extent = area / hullArea;
+                  
+                  if (extent > 0.60) { // Relaxed extent
+                    candidates.push({
+                      x: rect.x,
+                      y: rect.y,
+                      width: rect.width,
+                      height: rect.height,
+                      angle: angle,
+                      rawAngle: rawAngle,
+                      rotatedWidth: rotatedWidth,
+                      rotatedHeight: rotatedHeight,
+                      number: null,
+                      area: area,
+                      centerX: rect.x + rect.width / 2,
+                      centerY: rect.y + rect.height / 2,
+                      id: Math.random().toString(36).substr(2, 9), // Unique ID
+                    });
+                  }
               
               hull.delete();
             }
@@ -337,8 +345,21 @@ export default {
           I will fix this in the next iteration or assume it's fine for now as we don't loop infinitely.
         */
         
+        // Calculate standard parking space area (median of single spaces) to use for splitting
+        // This answers the requirement: "each space area is fixed"
+        const singleCandidates = candidates.filter(c => c.area <= maxSingleSpaceArea);
+        let standardArea = 0;
+        if (singleCandidates.length > 0) {
+          const areas = singleCandidates.map(c => c.area).sort((a, b) => a - b);
+          standardArea = areas[Math.floor(areas.length / 2)];
+          console.log(`Estimated standard area: ${standardArea}`);
+        }
+        // Fallback or verify standardArea
+        if (standardArea < 500) standardArea = 2500; // Default fallback
+
         // 第二遍：智能分割大的轮廓
         // 如果一个轮廓的面积超过单个车位最大面积，尝试分割它
+
         const finalCandidates = [];
         for (const candidate of candidates) {
           // 如果面积超过单个车位最大面积（肯定是多个车位的组合）
@@ -376,8 +397,8 @@ export default {
               continue;
             }
             
-            // 如果基于线条无法分割，尝试基于面积分割
-            const splitSpacesByArea = this.splitLargeContourByArea(candidate, maxSingleSpaceArea);
+            // 如果基于线条无法分割，尝试基于面积和旋转几何分割（更精准）
+            const splitSpacesByArea = this.splitLargeContourByArea(candidate, maxSingleSpaceArea, standardArea);
             if (splitSpacesByArea.length > 1) {
               console.log(`基于面积分割大轮廓: 面积=${candidate.area}, 分割成${splitSpacesByArea.length}个`);
               finalCandidates.push(...splitSpacesByArea);
@@ -651,76 +672,93 @@ export default {
       
       return splitSpaces;
     },
-    // 基于面积分割大的轮廓
-    splitLargeContourByArea(largeCandidate, maxSingleArea) {
+    // 基于面积和旋转几何分割大的轮廓
+    splitLargeContourByArea(candidate, maxSingleArea, standardArea) {
       const splitSpaces = [];
+      const targetArea = standardArea || (maxSingleArea / 2);
       
-      // Calculate how many spaces to split into
-      // Use Math.round instead of Math.ceil to avoid over-splitting (e.g., 3.1 spaces -> 4)
-      // Since area > maxSingleArea, we expect at least 2 spaces, so force min 2.
-      const estimatedCount = Math.max(2, Math.round(largeCandidate.area / maxSingleArea));
+      // Calculate how many spaces
+      const estimatedCount = Math.round(candidate.area / targetArea);
       
       if (estimatedCount < 2) {
         return splitSpaces;
       }
       
-      // 判断是横向排列还是纵向排列
-      const aspectRatio = largeCandidate.width / largeCandidate.height;
+      // Determine the geometry using rotated dimensions
+      const { rotatedWidth, rotatedHeight, rawAngle, centerX, centerY, angle } = candidate;
       
-      // 横向排列（宽 > 高）
-      if (aspectRatio > 1) {
-        // 按宽度分割
-        const spaceWidth = largeCandidate.width / estimatedCount;
-        const spaceHeight = largeCandidate.height;
-        const spaceArea = spaceWidth * spaceHeight;
-        
-        // 检查分割后的面积是否合理
-        // Relax validation
-        if (spaceArea <= maxSingleArea * 1.5 && spaceArea >= 500) {
-          for (let i = 0; i < estimatedCount; i++) {
-            splitSpaces.push({
-              x: largeCandidate.x + i * spaceWidth,
-              y: largeCandidate.y,
-              width: spaceWidth,
-              height: spaceHeight,
-              angle: largeCandidate.angle,
-              number: null,
-              area: spaceArea,
-              centerX: largeCandidate.x + (i + 0.5) * spaceWidth,
-              centerY: largeCandidate.y + spaceHeight / 2,
-            });
-          }
-          console.log(`横向分割: ${estimatedCount}个车位, 每个宽度=${spaceWidth.toFixed(1)}, 高度=${spaceHeight.toFixed(1)}`);
-          return splitSpaces;
-        }
-      } else {
-        // 纵向排列（高 > 宽）
-        // 按高度分割
-        const spaceWidth = largeCandidate.width;
-        const spaceHeight = largeCandidate.height / estimatedCount;
-        const spaceArea = spaceWidth * spaceHeight;
-        
-        // 检查分割后的面积是否合理
-        // Relax validation
-        if (spaceArea <= maxSingleArea * 1.5 && spaceArea >= 500) {
-          for (let i = 0; i < estimatedCount; i++) {
-            splitSpaces.push({
-              x: largeCandidate.x,
-              y: largeCandidate.y + i * spaceHeight,
-              width: spaceWidth,
-              height: spaceHeight,
-              angle: largeCandidate.angle,
-              number: null,
-              area: spaceArea,
-              centerX: largeCandidate.x + spaceWidth / 2,
-              centerY: largeCandidate.y + (i + 0.5) * spaceHeight,
-            });
-          }
-          console.log(`纵向分割: ${estimatedCount}个车位, 每个宽度=${spaceWidth.toFixed(1)}, 高度=${spaceHeight.toFixed(1)}`);
-          return splitSpaces;
-        }
+      // Determine split axis (split along the longer dimension of the rotated rect)
+      // Note: rawAngle relates to the side corresponding to 'width' in some OpenCV versions, 
+      // but easiest is just to compare w and h.
+      const isWidthLonger = rotatedWidth > rotatedHeight;
+      const longDim = isWidthLonger ? rotatedWidth : rotatedHeight;
+      const shortDim = isWidthLonger ? rotatedHeight : rotatedWidth;
+      
+      // Sanity check: is the long dimension long enough?
+      // If we are splitting into N, the segment length is longDim / N
+      const segmentLength = longDim / estimatedCount;
+      if (segmentLength < 20) return splitSpaces; // Too narrow
+      
+      // Calculate direction vector of the long axis
+      // rawAngle is in degrees.
+      // In OpenCV, minAreaRect angle is usually the angle of the width side.
+      // So if splitting along Width, use rawAngle.
+      // If splitting along Height, use rawAngle + 90.
+      
+      let splitAngle = rawAngle;
+      if (!isWidthLonger) {
+        splitAngle += 90;
       }
       
+      const rad = (splitAngle * Math.PI) / 180;
+      const dx = Math.cos(rad);
+      const dy = Math.sin(rad);
+      
+      // Start point logic:
+      // Center of the block is (centerX, centerY).
+      // Vector moves along the long axis.
+      // We want to place N centers along this axis centered at (centerX, centerY).
+      // Total span is longDim.
+      // Range is [-longDim/2, longDim/2] along the axis.
+      // i-th center (0 to N-1) is at: -longDim/2 + (i + 0.5) * segmentLength
+      
+      const startOffset = -longDim / 2;
+      
+      for (let i = 0; i < estimatedCount; i++) {
+        const offset = startOffset + (i + 0.5) * segmentLength;
+        const cx = centerX + offset * dx;
+        const cy = centerY + offset * dy;
+        
+        // Construct new space
+        // Width/Height need to be consistent with the split
+        // The new space has same orientation as the block
+        // Dimensions: ShortDim x SegmentLength (or vice versa)
+        
+        // We revert to axis-aligned approx for width/height properties 
+        // because the rest of the app might expect them.
+        // But `rotatedWidth/Height` are better properties.
+        // Let's approximate the new bounding box width/height.
+        const newWidth = Math.abs(shortDim * Math.sin(rad)) + Math.abs(segmentLength * Math.cos(rad));
+        const newHeight = Math.abs(shortDim * Math.cos(rad)) + Math.abs(segmentLength * Math.sin(rad));
+        
+        splitSpaces.push({
+          x: cx - newWidth / 2, // Approximate top-left
+          y: cy - newHeight / 2,
+          width: newWidth, // Approximate
+          height: newHeight, // Approximate
+          angle: angle, // Preserve the normalized angle
+          rawAngle: candidate.rawAngle, // Preserve raw
+          rotatedWidth: isWidthLonger ? segmentLength : rotatedWidth,
+          rotatedHeight: isWidthLonger ? rotatedHeight : segmentLength,
+          number: null,
+          area: candidate.area / estimatedCount,
+          centerX: cx,
+          centerY: cy,
+          id: Math.random().toString(36).substr(2, 9),
+        });
+      }
+      
+      console.log(`精确分割(Area+Rot): 面积=${candidate.area.toFixed(0)} -> ${estimatedCount}个车位, 目标面积=${targetArea}`);
       return splitSpaces;
     },
     // 非极大值抑制（NMS）去除重复检测
