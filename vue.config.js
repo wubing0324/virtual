@@ -1,4 +1,5 @@
 const { defineConfig } = require('@vue/cli-service')
+const { codeInspectorPlugin } = require("code-inspector-plugin")
 module.exports = defineConfig({
   transpileDependencies: true,
   configureWebpack: {
@@ -6,6 +7,12 @@ module.exports = defineConfig({
       fallback: {
         "path": require.resolve("path-browserify")
       }
-    }
+    },
+    plugins: [
+      codeInspectorPlugin({
+        bundler: "webpack",
+        hideConsole: true,
+      })
+    ],
   }
 })

@@ -35,7 +35,7 @@
           <!-- Tab 内容 -->
           <div class="tab-content">
             <!-- 车位识别 Tab -->
-            <div v-show="activeTab === 'recognize'" class="tab-panel">
+            <div v-show="activeTab === 'recognize'" class="tab-panel recognize-panel">
               <ParkingSpaceRecognizer
                 ref="recognizer"
                 @spaces-recognized="handleSpacesRecognized"
@@ -59,8 +59,7 @@
                         {{ space.number || `车位 ${index + 1}` }}
                       </div>
                       <div class="space-info">
-                        <span>位置: ({{ space.x }}, {{ space.y }})</span>
-                        <span>尺寸: {{ space.width }} × {{ space.height }}</span>
+                        <span>尺寸: {{ space.width.toFixed(2) }} × {{ space.height.toFixed(2) }}</span>
                         <span v-if="space.angle">角度: {{ space.angle }}°</span>
                       </div>
                     </div>
@@ -70,20 +69,24 @@
             </div>
             
             <!-- 图形库 Tab -->
-            <div v-show="activeTab === 'shapes'" class="tab-panel">
+            <div v-show="activeTab === 'shapes'" class="tab-panel shapes-panel">
               <ShapeLibrary />
             </div>
           </div>
         </div>
 
         <!-- 编辑面板（固定在下方） -->
-        <EditPanel
-          :selected-object="selectedObject"
-          @update-property="handleUpdateProperty"
-          @delete-object="handleDeleteObject"
-        />
+        <!-- EditPanel 移出，变为独立悬浮组件 -->
       </div>
     </div>
+    
+    <!-- 悬浮编辑面板 -->
+    <EditPanel
+      :selected-object="selectedObject"
+      @update-property="handleUpdateProperty"
+      @delete-object="handleDeleteObject"
+      @close="handleSelectionCleared"
+    />
   </div>
 </template>
 
@@ -237,14 +240,34 @@ export default {
       }
     },
     handleSpacesRecognized(spaces) {
-      this.recognizedSpaces = spaces;
+      // 对车位进行排序
+      const sortedSpaces = [...spaces].sort((a, b) => {
+        // 1. 如果都有车位号，按车位号排序（自然顺序，如 A1, A2, A10）
+        if (a.number && b.number) {
+          return a.number.localeCompare(b.number, undefined, { numeric: true, sensitivity: 'base' });
+        }
+        
+        // 2. 有车位号的排在前面
+        if (a.number && !b.number) return -1;
+        if (!a.number && b.number) return 1;
+        
+        // 3. 如果都没有车位号，按空间位置排序（从上到下，从左到右）
+        // 允许一定的 Y 轴误差（高度的一半），视为同一行
+        const rowThreshold = Math.min(a.height, b.height) * 0.5;
+        if (Math.abs(a.y - b.y) < rowThreshold) {
+          return a.x - b.x;
+        }
+        return a.y - b.y;
+      });
+
+      this.recognizedSpaces = sortedSpaces;
       this.spaceFabricObjects.clear(); // 清空之前的映射
-      console.log('识别到的车位数据:', spaces);
+      console.log('识别到的车位数据(已排序):', sortedSpaces);
       
       // 将识别到的车位添加到画布上
-      if (this.canvas && spaces.length > 0) {
+      if (this.canvas && sortedSpaces.length > 0) {
         // 在画布上创建车位矩形
-        spaces.forEach((space, index) => {
+        sortedSpaces.forEach((space, index) => {
           const fabricObj = this.createParkingSpace(space, index);
           if (fabricObj) {
             this.spaceFabricObjects.set(index, fabricObj);
@@ -494,10 +517,30 @@ export default {
   overflow-y: auto;
 }
 
+/* 专门针对识别面板的布局优化 */
+.tab-panel.recognize-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 禁止整体滚动，交给内部列表 */
+}
+
+/* 图形库面板优化 */
+.tab-panel.shapes-panel {
+  padding: 0; /* 移除内边距，由组件自己控制 */
+  overflow: hidden; /* 禁止整体滚动 */
+  display: flex;
+  flex-direction: column;
+}
+
 .spaces-list {
   margin-top: 20px;
   border-top: 1px solid #eee;
   padding-top: 15px;
+  /* Flex布局撑开剩余空间 */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .list-header {
@@ -507,13 +550,16 @@ export default {
   margin-bottom: 10px;
   padding-bottom: 8px;
   border-bottom: 1px solid #eee;
+  flex-shrink: 0; /* 防止表头被压缩 */
 }
 
 .list-items {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 300px;
+  /* 移除固定高度，改为撑满 */
+  max-height: none;
+  flex: 1;
   overflow-y: auto;
 }
 
@@ -529,7 +575,7 @@ export default {
 .space-item:hover {
   border-color: #4CAF50;
   background: #f0f8f0;
-  transform: translateX(2px);
+  transform: translateX(1px);
 }
 
 .space-item.active {

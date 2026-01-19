@@ -3,10 +3,6 @@
     <button @click="startRecognition" :disabled="isProcessing" class="recognize-btn">
       {{ isProcessing ? '识别中...' : '开始识别车位' }}
     </button>
-    <div v-if="parkingSpaces.length > 0" class="results-info">
-      已识别 {{ parkingSpaces.length }} 个车位
-    </div>
-    <!-- 隐藏的 canvas 用于图像处理 -->
     <canvas ref="imageCanvas" style="display: none;"></canvas>
   </div>
 </template>

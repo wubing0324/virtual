@@ -48,9 +48,13 @@ export default {
 <style scoped>
 .shape-library {
   padding: 15px;
-  border-bottom: 1px solid #eee;
-  max-height: 300px;
-  overflow-y: auto;
+  /* 移除底部边框和固定高度 */
+  /* border-bottom: 1px solid #eee; */
+  /* max-height: 300px; */
+  height: 100%; /* 撑满父容器 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 禁止整体滚动 */
 }
 
 .section-title {
@@ -58,19 +62,32 @@ export default {
   margin-bottom: 15px;
   color: #333;
   font-size: 14px;
+  flex-shrink: 0; /* 标题不收缩 */
 }
 
 .shapes-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
+  /* 添加滚动支持 */
+  flex: 1;
+  overflow-y: auto; 
+  padding-bottom: 10px; /* 底部留点空隙 */
+  align-content: flex-start; /* 内容从上对齐，防止稀疏拉伸 */
 }
 
 .shape-item {
+  /* 使用 flex 布局实现 2 列：(100% - gap) / 2 */
+  width: calc(50% - 5px);
+  height: 110px; /* 固定高度，保持整齐 */
+  box-sizing: border-box;
+  
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 15px;
+  justify-content: center; /* 垂直居中 */
+  
+  padding: 10px;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   cursor: grab;
