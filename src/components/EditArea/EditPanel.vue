@@ -3,13 +3,13 @@
     <div v-if="selectedObject" class="edit-content">
       <div class="section-title">编辑属性</div>
       <div class="edit-form">
-        <div v-if="selectedObject.parkingNumber" class="form-group">
+        <div v-if="selectedObject.parkingNumber !== undefined" class="form-group">
           <label>车位号:</label>
           <input
             type="text"
-            :value="selectedObject.parkingNumber"
-            disabled
-            class="disabled-input"
+            :value="selectedObject.parkingNumber || ''"
+            @input="updateProperty('parkingNumber', $event.target.value)"
+            placeholder="输入车位号"
           />
         </div>
         <div class="form-group">

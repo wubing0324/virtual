@@ -151,6 +151,63 @@ export default {
       const obj = this.selectedObject.fabricObject;
       const numValue = parseFloat(value);
 
+      // 处理车位号更新
+      if (property === 'parkingNumber') {
+        obj.set('parkingNumber', value || null);
+        
+        // 更新或创建文本标签
+        if (value && value.trim()) {
+          // 如果文本对象不存在，创建它
+          if (!obj.parkingText) {
+            const { Text } = require('fabric');
+            const text = new Text(value, {
+              left: obj.left + 25,
+              top: obj.top + 10,
+              fontSize: 14,
+              fill: '#000000',
+              fontFamily: 'Arial',
+              selectable: false,
+              evented: false,
+              parkingSpaceId: obj.id,
+            });
+            this.canvas.add(text);
+            obj.parkingText = text;
+            
+            // 监听矩形移动和旋转，同步更新文本位置
+            const updateTextPosition = () => {
+              if (obj.parkingText) {
+                obj.parkingText.set({
+                  left: obj.left + 25,
+                  top: obj.top + 10,
+                  angle: obj.angle || 0,
+                });
+                this.canvas.renderAll();
+              }
+            };
+            
+            // 如果还没有绑定事件，则绑定
+            if (!obj._parkingTextEventsBound) {
+              obj.on('moving', updateTextPosition);
+              obj.on('rotating', updateTextPosition);
+              obj._parkingTextEventsBound = true;
+            }
+          } else {
+            // 更新现有文本内容
+            obj.parkingText.set('text', value);
+          }
+        } else {
+          // 如果车位号为空，删除文本标签
+          if (obj.parkingText) {
+            this.canvas.remove(obj.parkingText);
+            obj.parkingText = null;
+          }
+        }
+        
+        this.canvas.renderAll();
+        this.selectedObject.parkingNumber = value || null;
+        return;
+      }
+
       if (property === 'width' || property === 'height') {
         const scale = property === 'width' 
           ? numValue / (obj.width || 1)
@@ -216,7 +273,8 @@ export default {
       });
 
       // 添加车位信息
-      const spaceId = `parking_${index}_${Date.now()}`;
+      // 使用识别结果中的 id，如果没有则生成一个
+      const spaceId = space.id || `parking_${index}_${Date.now()}`;
       rect.set({
         id: spaceId,
         parkingNumber: space.number || null,
@@ -226,12 +284,13 @@ export default {
       });
 
       // 如果有车位号，添加文本标签（作为矩形的一部分，跟随移动）
+      let text = null;
       if (space.number) {
-        const text = new Text(space.number, {
-          left: space.x + 5,
-          top: space.y + 5,
+        text = new Text(space.number, {
+          left: space.x + 25,
+          top: space.y + 10,
           fontSize: 14,
-          fill: '#00ff00',
+          fill: '#000000',
           fontFamily: 'Arial',
           selectable: false,
           evented: false,
@@ -241,23 +300,30 @@ export default {
         // 将文本添加到画布
         this.canvas.add(text);
         
+        // 保存文本对象引用到矩形对象上，方便后续更新
+        rect.parkingText = text;
+        
         // 监听矩形移动，同步更新文本位置
         rect.on('moving', () => {
-          text.set({
-            left: rect.left + 5,
-            top: rect.top + 5,
-          });
-          this.canvas.renderAll();
+          if (text) {
+            text.set({
+              left: rect.left + 25,
+              top: rect.top + 10,
+            });
+            this.canvas.renderAll();
+          }
         });
         
         // 监听矩形旋转，同步更新文本
         rect.on('rotating', () => {
-          text.set({
-            left: rect.left + 5,
-            top: rect.top + 5,
-            angle: rect.angle,
-          });
-          this.canvas.renderAll();
+          if (text) {
+            text.set({
+              left: rect.left + 25,
+              top: rect.top + 10,
+              angle: rect.angle,
+            });
+            this.canvas.renderAll();
+          }
         });
       }
 

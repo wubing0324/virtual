@@ -190,6 +190,7 @@ export default {
         const src = cv.imread(this.imageCanvas);
 
         // Detect separating lines (blue and green)
+        // 检测分割线（蓝色和绿色）
         const separatingLines = this.detectSeparatingLines(src);
         console.log(`Detected ${separatingLines.horizontal.length} horizontal lines, ${separatingLines.vertical.length} vertical lines`);
         
@@ -197,25 +198,31 @@ export default {
         cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
         // Pre-processing: Gaussian Blur to reduce noise
+        // 预处理：高斯模糊以减少噪点
         const blurred = new cv.Mat();
         cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
 
         // Pipeline 1: Edge Detection
+        // 流程 1：边缘检测
         // Use Canny edge detection
+        // 使用 Canny 边缘检测
         const edges = new cv.Mat();
         cv.Canny(blurred, edges, 30, 100); // Lower thresholds for better sensitivity
 
         // Dilate edges to close gaps (crucial for dashed lines or incomplete boundaries)
+        // 膨胀边缘以闭合间隙（对于虚线或不完整的边界至关重要）
         const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
         const dilatedEdges = new cv.Mat();
         cv.dilate(edges, dilatedEdges, kernel);
 
         // Find contours from edges
+        // 从边缘查找轮廓
         const edgeContours = new cv.MatVector();
         const hierarchy = new cv.Mat();
         cv.findContours(dilatedEdges, edgeContours, hierarchy, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
 
         // Pipeline 2: Color Detection (robust for colored regions like green/blue fills)
+        // 流程 2：颜色检测（对于绿色/蓝色填充区域更稳健）
         const hsv = new cv.Mat();
         const rgb = new cv.Mat();
         cv.cvtColor(src, rgb, cv.COLOR_RGBA2RGB);
@@ -223,31 +230,37 @@ export default {
         rgb.delete();
 
         // Green mask
+        // 绿色掩码
         const lowerGreen = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [35, 40, 40, 0]);
         const upperGreen = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [85, 255, 255, 0]);
         const greenMask = new cv.Mat();
         cv.inRange(hsv, lowerGreen, upperGreen, greenMask);
 
         // Blue mask
+        // 蓝色掩码
         const lowerBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [100, 50, 50, 0]);
         const upperBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [130, 255, 255, 0]);
         const blueMask = new cv.Mat();
         cv.inRange(hsv, lowerBlue, upperBlue, blueMask);
 
         // Combine masks
+        // 合并掩码
         const colorMask = new cv.Mat();
         cv.bitwise_or(greenMask, blueMask, colorMask);
 
         // Improve mask (close holes)
+        // 改进掩码（闭合孔洞）
         const morphKernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5));
         cv.morphologyEx(colorMask, colorMask, cv.MORPH_CLOSE, morphKernel);
 
         // Find contours from color mask
+        // 从颜色掩码查找轮廓
         const colorContours = new cv.MatVector();
         const colorHierarchy = new cv.Mat(); // Separate hierarchy
         cv.findContours(colorMask, colorContours, colorHierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
         // Clean up temp resources
+        // 清理临时资源
         blurred.delete();
         edges.delete();
         kernel.delete();
@@ -265,6 +278,7 @@ export default {
         const maxSingleSpaceArea = 6000; // 单个车位的最大面积（超过此值肯定是多个车位合并）
         
         // Process both sets of contours
+        // 处理两组轮廓
         const candidates = [];
         const contourSets = [edgeContours, colorContours];
 
@@ -302,11 +316,13 @@ export default {
             const approx = new cv.Mat();
             cv.approxPolyDP(cnt, approx, epsilon, true);
 
-            // Accept 4-6 vertices (roughly rectangular)
+            // Accept 4-8 vertices (roughly rectangular)
+            // 接受 4-8 个顶点（大致为矩形）
             if (approx.rows >= 4 && approx.rows <= 8) { // Allow slightly more complex shapes
                   const rotatedRect = cv.minAreaRect(cnt);
                   let angle = Math.round(rotatedRect.angle);
                   // Keep raw values for accurate splitting later
+                  // 保留原始值以便后续精确分割
                   const rawAngle = rotatedRect.angle;
                   const rotatedWidth = rotatedRect.size.width;
                   const rotatedHeight = rotatedRect.size.height;
@@ -319,7 +335,7 @@ export default {
                   const hullArea = cv.contourArea(hull);
                   const extent = area / hullArea;
                   
-                  if (extent > 0.60) { // Relaxed extent
+                  if (extent > 0.60) { // 放宽占比限制
                     candidates.push({
                       x: rect.x,
                       y: rect.y,
@@ -362,6 +378,7 @@ export default {
         */
         
         // Calculate standard parking space area and Aspect Ratio
+        // 计算标准车位面积和长宽比
         let standardArea = 0;
         let standardRatio = 0.5; // Default: Tall (1:2)
         
@@ -374,7 +391,9 @@ export default {
            }
            
            // Calculate Standard Aspect Ratio from likely single spaces
+           // 从可能的单车位计算标准长宽比
            // Use rotated dimensions for accuracy
+           // 使用旋转后的尺寸以提高精度
            const singleSpaces = candidates.filter(c => c.area > standardArea * 0.8 && c.area < standardArea * 1.5);
            if (singleSpaces.length > 0) {
               // We want the ratio of Short/Long side generally, or W/H?
@@ -393,6 +412,7 @@ export default {
         
         const finalCandidates = [];
         // Use a Queue for recursive processing of splits
+        // 使用队列进行递归分割处理
         const processingQueue = [...candidates];
         
         let loopCount = 0;
@@ -405,7 +425,9 @@ export default {
           let splitResult = [];
           
           // 0. Safety Check
+          // 0. 安全检查
           // If candidate is too small, don't even try to split.
+          // 如果候选区域太小，甚至不尝试分割。
           if (candidate.area < standardArea * 0.5) {
                finalCandidates.push(candidate);
                continue;
@@ -420,6 +442,7 @@ export default {
             if (splitByColor.length > 1) {
               console.log(`基于颜色分割线分割/递归: 面积=${candidate.area}, 分割成${splitByColor.length}个`);
               // Push back to queue for further splitting (e.g. grid 2x3 -> 2x1 + 2x2...)
+              // 放回队列以进行进一步分割（例如网格 2x3 -> 2x1 + 2x2...）
               splitResult = splitByColor;
             }
           }
@@ -431,6 +454,8 @@ export default {
 
           // 2. 尝试几何分割 (Area Based)
           // Aggressive split threshold
+          // 2. 尝试几何分割（基于面积）
+          // 激进的分割阈值
           const splitThreshold = Math.max(maxSingleSpaceArea, standardArea * 1.5);
           
           if (candidate.area > splitThreshold) {
@@ -452,6 +477,7 @@ export default {
             }
             
             // ... Separating Lines check ...
+            // ... 分割线检查 ...
             const splitSpaces = this.splitLargeContourBySeparatingLines(candidate, separatingLines, maxSingleSpaceArea);
             if (splitSpaces.length > 1) {
               processingQueue.push(...splitSpaces);
@@ -459,6 +485,7 @@ export default {
             }
             
             // Fallback: Area Split with Aspect Ratio checking
+            // 后备方案：带有长宽比检查的面积分割
             const splitSpacesByArea = this.splitLargeContourByArea(candidate, maxSingleSpaceArea, standardArea, null, standardRatio);
             if (splitSpacesByArea.length > 1) {
               console.log(`基于面积分割大轮廓: 面积=${candidate.area}, 分割成${splitSpacesByArea.length}个`);
@@ -468,6 +495,7 @@ export default {
           }
           
           // If no split happened, it's final
+          // 如果未发生分割，则为最终结果
           finalCandidates.push(candidate);
         }
 
@@ -523,6 +551,7 @@ export default {
       return Math.round(rect.angle);
     },
     // Detect separating lines (Blue and Green)
+    // 检测分割线（蓝色和绿色）
     detectSeparatingLines(srcMat) {
       const horizontalLines = [];
       const verticalLines = [];
@@ -553,7 +582,9 @@ export default {
         cv.bitwise_or(blueMask, greenMask, combinedMask);
 
         // Morphological operations to connect lines
+        // 形态学操作以连接线条
         // Use dilate to connect broken lines (more robust than OPEN for thin lines)
+        // 使用膨胀连接断开的线条（比 OPEN 对细线更稳健）
         const kernelH = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(20, 1)); 
         const kernelV = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 20)); 
         
@@ -625,6 +656,7 @@ export default {
       };
     },
     // Split large contours by separating lines
+    // 通过分割线分割大轮廓
     splitLargeContourBySeparatingLines(largeCandidate, lines, maxSingleArea) {
       const splitSpaces = [];
       
@@ -658,6 +690,7 @@ export default {
             
             // 检查分割后的面积是否合理
             // Relax validation: allow slightly larger areas (up to 1.5x) to prevent rejecting valid splits
+            // 放宽验证：允许稍大的面积（最高 1.5 倍）以防止拒绝有效分割
             if (area <= maxSingleArea * 1.5 && area >= 500 && width > 30) {
               splitSpaces.push({
                 x: x,
@@ -669,6 +702,7 @@ export default {
                 area: area,
                 centerX: x + width / 2,
                 centerY: largeCandidate.y + largeCandidate.height / 2,
+                id: Math.random().toString(36).substr(2, 9),
               });
             }
           }
@@ -716,6 +750,7 @@ export default {
                 area: area,
                 centerX: largeCandidate.x + largeCandidate.width / 2,
                 centerY: y + height / 2,
+                id: Math.random().toString(36).substr(2, 9),
               });
             }
           }
@@ -735,6 +770,7 @@ export default {
       const targetArea = standardArea || (maxSingleArea / 2);
       
       // Calculate how many spaces
+      // 计算有多少个车位
       const estimatedCount = Math.round(candidate.area / targetArea);
       
       if (estimatedCount < 2) {
@@ -742,18 +778,24 @@ export default {
       }
       
       // Determine the geometry using rotated dimensions
+      // 使用旋转尺寸确定几何形状
       const { rotatedWidth, rotatedHeight, rawAngle, centerX, centerY, angle } = candidate;
       
       // Determine split axis based on which split produces roughly consistent Aspect Ratio
+      // 根据哪种分割产生大致一致的长宽比来确定分割轴
+      
       // Current Aspect Ratio
       // const currentRatio = rotatedWidth / rotatedHeight;
       
       let isWidthLonger = rotatedWidth > rotatedHeight;
       
       // If we split Width, new ratio is (W/N) / H = Ratio / N
+      // 如果我们分割宽度，新比例是 (W/N) / H = Ratio / N
       // If we split Height, new ratio is W / (H/N) = Ratio * N
+      // 如果我们分割高度，新比例是 W / (H/N) = Ratio * N
       
       // Check which one is closer to standardRatio (if valid)
+      // 检查哪一个更接近 standardRatio（如果有效）
       if (standardRatio) {
           const ratioIfSplitWidth = (rotatedWidth / estimatedCount) / rotatedHeight;
           const ratioIfSplitHeight = rotatedWidth / (rotatedHeight / estimatedCount);
@@ -776,15 +818,22 @@ export default {
       const shortDim = isWidthLonger ? rotatedHeight : rotatedWidth;
       
       // Sanity check: is the long dimension long enough?
+      // 合理性检查：长边是否足够长？
       // If we are splitting into N, the segment length is longDim / N
+      // 如果我们分成 N 份，线段长度是 longDim / N
       const segmentLength = longDim / estimatedCount;
       if (segmentLength < 20) return splitSpaces; // Too narrow
       
       // Calculate direction vector of the long axis
+      // 计算长轴的方向向量
       // rawAngle is in degrees.
+      // rawAngle 是度数。
       // In OpenCV, minAreaRect angle is usually the angle of the width side.
+      // 在 OpenCV 中，minAreaRect 角度通常是宽边的角度。
       // So if splitting along Width, use rawAngle.
+      // 所以如果沿宽度分割，使用 rawAngle。
       // If splitting along Height, use rawAngle + 90.
+      // 如果沿高度分割，使用 rawAngle + 90。
       
       let splitAngle = rawAngle;
       if (!isWidthLonger) {
@@ -798,10 +847,15 @@ export default {
       // Start point logic:
       // Center of the block is (centerX, centerY).
       // Vector moves along the long axis.
+      // 向量沿长轴移动。
       // We want to place N centers along this axis centered at (centerX, centerY).
+      // 我们希望沿此轴放置 N 个中心，以 (centerX, centerY) 为中心。
       // Total span is longDim.
+      // 总跨度是 longDim。
       // Range is [-longDim/2, longDim/2] along the axis.
+      // 范围是轴上的 [-longDim/2, longDim/2]。
       // i-th center (0 to N-1) is at: -longDim/2 + (i + 0.5) * segmentLength
+      // 第 i 个中心 (0 到 N-1) 位于：-longDim/2 + (i + 0.5) * segmentLength
       
       const startOffset = -longDim / 2;
       
@@ -811,24 +865,37 @@ export default {
         const cy = centerY + offset * dy;
         
         // Construct new space
+        // 构建新车位
         // Width/Height need to be consistent with the split
+        // 宽度/高度需要与分割一致
         // The new space has same orientation as the block
+        // 新车位与块具有相同的方向
         // Dimensions: ShortDim x SegmentLength (or vice versa)
+        // 尺寸：ShortDim x SegmentLength（或反之）
         
         // We revert to axis-aligned approx for width/height properties 
+        // 我们恢复宽度/高度属性的轴对齐近似值
         // because the rest of the app might expect them.
+        // 因为应用程序的其他部分可能需要它们。
         // But `rotatedWidth/Height` are better properties.
+        // 但 `rotatedWidth/Height` 是更好的属性。
         // Let's approximate the new bounding box width/height.
+        // 让我们估算新的边界框宽度/高度。
         const newWidth = Math.abs(shortDim * Math.sin(rad)) + Math.abs(segmentLength * Math.cos(rad));
         const newHeight = Math.abs(shortDim * Math.cos(rad)) + Math.abs(segmentLength * Math.sin(rad));
         
         splitSpaces.push({
           x: cx - newWidth / 2, // Approximate top-left
+          // 近似左上角
           y: cy - newHeight / 2,
           width: newWidth, // Approximate
+          // 近似
           height: newHeight, // Approximate
+          // 近似
           angle: angle, // Preserve the normalized angle
+          // 保留标准化角度
           rawAngle: candidate.rawAngle, // Preserve raw
+          // 保留原始角度
           rotatedWidth: isWidthLonger ? segmentLength : rotatedWidth,
           rotatedHeight: isWidthLonger ? rotatedHeight : segmentLength,
           number: null,
@@ -844,21 +911,27 @@ export default {
     },
     // Split using color profile logic (projection of Blue/Green pixels)
     // Split using color profile logic (projection of Blue/Green pixels)
+    // 使用颜色分布逻辑（蓝色/绿色像素投影）进行分割
     splitLargeContourByColorProfile(srcMat, candidate, maxSingleArea, orientationHint, standardRatio) {
       const cv = window.cv;
       const splitSpaces = [];
       try {
         // 1. Deskew the ROI
+        // 1. 校正感兴趣区域 (Deskew)
         const { rotatedWidth, rotatedHeight, rawAngle, centerX, centerY } = candidate;
         
         // Decide standard or target number of spaces to look for
+        // 决定寻找的标准或目标车位数量
         // Don't limit by estimated count strictly. If we find a strong line, we split.
+        // 不严格限制于预估数量。如果我们发现一条强线，我们就分割。
         // But we avoid splitting things that are clearly too small.
+        // 但我们避免分割那些明显太小的东西。
         if (candidate.area < maxSingleArea * 0.5) return [];
 
         const center = new cv.Point(centerX, centerY);
         const M = cv.getRotationMatrix2D(center, rawAngle, 1.0);
          // Adjust translation
+         // 调整平移
         const width = rotatedWidth;
         const height = rotatedHeight;
         M.data64F[2] += (width / 2.0) - center.x;
@@ -877,9 +950,13 @@ export default {
         rgb.delete();
 
         // Blue mask - Widen the range to catch dark blue/light blue
+        // 蓝色掩码 - 放宽范围以捕获深蓝/浅蓝
         // Hue: Blue is roughly 240 deg -> ~120 in OpenCV (0-180). Range 100-140 is good.
+        // 色调：蓝色大约是 240 度 -> OpenCV 中约 120 (0-180)。范围 90-140 不错。
         // Saturation: Allow lower saturation (grayish blue).
+        // 饱和度：允许较低饱和度（灰蓝色）。
         // Value: Allow darker blue.
+        // 明度：允许较暗的蓝色。
         const lowerBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [90, 40, 30, 0]);
         const upperBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [140, 255, 255, 0]);
         const blueMask = new cv.Mat();
@@ -896,12 +973,15 @@ export default {
         cv.bitwise_or(blueMask, greenMask, combinedMask);
         
         // Morphological Dilate to make lines thicker and connected
+        // 形态学膨胀使线条变粗并连接
         // This helps significantly if the line is thin or dashed
+        // 假如线条很细或断断续续，这会有很大帮助
         const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
         cv.dilate(combinedMask, combinedMask, kernel);
         kernel.delete();
 
         // 3. Scan BOTH directions and find the best separating lines
+        // 3. 扫描两个方向并找到最佳分割线
         
         const findBestPeaks = (lookForVerticalLines) => {
              const length = lookForVerticalLines ? width : height;
@@ -929,10 +1009,14 @@ export default {
              }
              
              // Dynamic Threshold
+             // 动态阈值
              // Lower the hard requirement for thickness coverage.
+             // 降低厚度覆盖的硬性要求。
              // Even separate dots forming a line should count.
+             // 即使是形成一条线的独立点也应该算数。
              const maxVal = Math.max(...projection);
              // Use 10% of thickness or 30% of max peak as threshold
+             // 使用厚度的 10% 或最大峰值的 30% 作为阈值
              const threshold = Math.max(thickness * 0.10, maxVal * 0.3);
              
              const peaks = [];
@@ -960,47 +1044,66 @@ export default {
         const resY = findBestPeaks(false); // Horizontal lines (Splitting height)
         
         // Multi-factor Scoring to decide direction
+        // 多因素评分决定方向
         let useVerticalSplit = true; 
         
         const scoreDirection = (res, isVerticalSplit) => {
             if (res.peaks.length === 0) return 0;
             
             // 1. Peak Evidence Score
+            // 1. 峰值证据分数
             let peakScore = res.peaks.reduce((acc, p) => acc + p.height, 0);
             
             // 2. Aspect Ratio Match Score (Crucial but trust Strong Peaks more)
+            // 2. 长宽比匹配分数（关键，但更信任强峰值）
             // Calculate relative strength of the peak (how long the line is vs the dimension)
+            // 计算峰值的相对强度（线条长度与尺寸的比值）
             // peak.height is the sum of pixels. dimension is 'thickness'.
+            // peak.height 是像素总和。dimension 是 'thickness'。
             const thickness = isVerticalSplit ? height : width; // The dimension along the line
+            // 沿线条的尺寸
             const maxLineConsistency = res.maxVal / thickness; // 0.0 to 1.0 (1.0 means solid line)
+            // 0.0 到 1.0（1.0 表示实线）
             
             if (standardRatio) {
                // What would the ratio be if we split this way?
+               // 如果我们这样分割，比例会是多少？
                // Assuming equal split by peak count+1
+               // 假设按照峰值数量+1进行均分
                const count = res.peaks.length + 1;
                let resultingRatio; 
                if (isVerticalSplit) {
                    // Splitting Width
+                   // 分割宽度
                    resultingRatio = (width / count) / height;
                } else {
                    // Splitting Height
+                   // 分割高度
                    resultingRatio = width / (height / count);
                }
                
                // Calculate deviation from standard
+               // 计算与标准的偏差
                const dev = Math.abs(resultingRatio - standardRatio) / standardRatio;
                
                // Logic: If line is very strong (>40% solid), ignore ratio mismatch (could look weird but line is real)
+               // 逻辑：如果线条非常强（>40% 实线），忽略比例不匹配（可能看起来很奇怪但线条是真实的）
                // Lower threshold for "Strong line" because rotation errors can smudge the line.
+               // 降低“强线”阈值，因为旋转误差可能会模糊线条。
                if (maxLineConsistency > 0.4) {
                    peakScore *= 5.0; // Trust the strong line HEAVILY
+                   // 极度信任强线
                } else {
                    // Normal ratio check
+                   // 正常比例检查
                    if (dev < 0.3) peakScore *= 3.0; // Strong shape match
+                   // 形状匹配强
                    else if (dev > 1.0) peakScore *= 0.5; // Mild Penalty (don't kill it completely)
+                   // 轻微惩罚（不要完全扼杀）
                }
             } else {
                // No standard ratio yet? Trust strong lines.
+               // 还没有标准比例？信任强线。
                if (maxLineConsistency > 0.4) peakScore *= 2.0;
             }
             
@@ -1457,10 +1560,15 @@ export default {
           const cropped = srcMat.roi(roi);
           
           // Preprocess: Filter out colored lines (Blue lines)
+          // 预处理：过滤掉彩色线条（蓝线）
           // Text is black. Background is light. Lines are blue.
+          // 文字是黑色的。背景是浅色的。线条是蓝色的。
           // Strategy: Convert to HSV, mask out distinct colors (like Blue), result in white.
+          // 策略：转换为 HSV，屏蔽掉明显的颜色（如蓝色），结果设为白色。
           // Or simply binarize with simple threshold might work if blue is light enough?
+          // 或者如果蓝色足够浅，简单的阈值二值化也许可行？
           // But blue line is dark. Black text is darker.
+          // 但蓝线是深色的。黑色文字更深。
           
           const rgb = new cv.Mat();
           cv.cvtColor(cropped, rgb, cv.COLOR_RGBA2RGB);
@@ -1470,39 +1578,54 @@ export default {
           rgb.delete();
 
           // Create mask for non-black/gray stuff (i.e. colored stuff like blue lines)
+          // 为非黑色/灰色物体（即像蓝线这样的彩色物体）创建掩码
           // Blue is around H=100-130.
+          // 蓝色大约在 H=100-130。
           const lowerBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [90, 50, 50, 0]);
           const upperBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [140, 255, 255, 0]);
           const blueMask = new cv.Mat();
           cv.inRange(hsv, lowerBlue, upperBlue, blueMask);
           
           // Inpaint/Remove blue lines on the original image (make them white)
+          // 修复/移除原始图像上的蓝线（把它们变成白色）
           // We can use the mask to set pixels in 'cropped' to white (255,255,255)
+          // 我们可以使用掩码将 'cropped' 中的像素设置为白色 (255,255,255)
           // Note: cropped is RGBA or BGR? imread usually RGBA in canvas.
+          // 注意：cropped 是 RGBA 还是 BGR？canvas 中的 imread 通常是 RGBA。
           
           // Let's iterate pixels? Or use bitwise instructions.
+          // 让我们迭代像素？或者使用位指令。
           // Set to white where blueMask is 255
+          // 在 blueMask 为 255 的地方设置为白色
           const whiteMat = new cv.Mat(cropped.rows, cropped.cols, cropped.type(), new cv.Scalar(255, 255, 255, 255));
           cropped.copyTo(whiteMat, blueMask); // Copy existing where mask is non-zero? No, we want to OVERWRITE blue with white.
+          // 哪里掩码非零就复制过去？不，我们要用白色覆盖蓝色。
           // bitwise_not of mask -> non-blue area.
+          // 掩码取反 -> 非蓝色区域。
           const notBlue = new cv.Mat();
           cv.bitwise_not(blueMask, notBlue);
           
           const finalImg = new cv.Mat();
           // Copy original where it is NOT blue
+          // 在非蓝色的地方复制原始图像
           cropped.copyTo(finalImg, notBlue);
           // Add white where it IS blue (effectively replacing blue with black? No, uninitialized is 0)
+          // 在蓝色的地方添加白色（有效地用白色替换蓝色）
           // We need white background.
+          // 我们需要白色背景。
           // Initialize finalImg with White
+          // 用白色初始化 finalImg
           finalImg.setTo(new cv.Scalar(255, 255, 255, 255));
           cropped.copyTo(finalImg, notBlue);
           
           // Now binarize to separate text (Black) from Background (White)
+          // 现在进行二值化，将文字（黑色）与背景（白色）分离
           const gray = new cv.Mat();
           cv.cvtColor(finalImg, gray, cv.COLOR_RGBA2GRAY);
           cv.threshold(gray, gray, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
           
           // Show this cleaned image to Tesseract
+          // 将此清理后的图像显示给 Tesseract
           const canvas = document.createElement('canvas');
           canvas.width = gray.cols;
           canvas.height = gray.rows;
@@ -1530,6 +1653,7 @@ export default {
       }
 
       // Legacy fallback (slower)
+      // 旧版后备方案（较慢）
       try {
         // 提取车位号区域
         const roi = new cv.Rect(
