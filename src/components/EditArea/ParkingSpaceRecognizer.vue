@@ -26,7 +26,13 @@ export default {
       isProcessing: false,
       parkingSpaces: [],
       opencvLoaded: false,
+      worker: null,
     };
+  },
+  beforeDestroy() {
+    if (this.worker) {
+      this.worker.terminate();
+    }
   },
   computed: {
     imageSrc() {
@@ -44,9 +50,19 @@ export default {
     },
   },
   async mounted() {
+    await this.initTesseract();
     await this.loadOpenCV();
   },
   methods: {
+    async initTesseract() {
+      try {
+        console.log('正在初始化 Tesseract Worker...');
+        this.worker = await Tesseract.createWorker('eng');
+        console.log('Tesseract Worker 初始化完成');
+      } catch (e) {
+        console.error('Tesseract 初始化失败:', e);
+      }
+    },
     async loadOpenCV() {
       // 直接使用 CDN 方式加载，避免 webpack 打包问题
       return new Promise((resolve, reject) => {
@@ -345,72 +361,120 @@ export default {
           I will fix this in the next iteration or assume it's fine for now as we don't loop infinitely.
         */
         
-        // Calculate standard parking space area (median of single spaces) to use for splitting
-        // This answers the requirement: "each space area is fixed"
-        const singleCandidates = candidates.filter(c => c.area <= maxSingleSpaceArea);
+        // Calculate standard parking space area and Aspect Ratio
         let standardArea = 0;
-        if (singleCandidates.length > 0) {
-          const areas = singleCandidates.map(c => c.area).sort((a, b) => a - b);
-          standardArea = areas[Math.floor(areas.length / 2)];
-          console.log(`Estimated standard area: ${standardArea}`);
+        let standardRatio = 0.5; // Default: Tall (1:2)
+        
+        if (candidates.length > 0) {
+           const areas = candidates.map(c => c.area).sort((a, b) => a - b);
+           const validAreas = areas.filter(a => a > 500);
+           if (validAreas.length > 0) {
+             const idx = Math.floor(validAreas.length * 0.2);
+             standardArea = validAreas[idx];
+           }
+           
+           // Calculate Standard Aspect Ratio from likely single spaces
+           // Use rotated dimensions for accuracy
+           const singleSpaces = candidates.filter(c => c.area > standardArea * 0.8 && c.area < standardArea * 1.5);
+           if (singleSpaces.length > 0) {
+              // We want the ratio of Short/Long side generally, or W/H?
+              // Let's stick to RotatedWidth / RotatedHeight convention.
+              // But rotation can be 90deg off.
+              // Let's use the median of (Width / Height) assuming they are roughly aligned or we normalize.
+              // Actually, simply knowing if "Standard Space" is Tall (R<1) or Wide (R>1) is enough?
+              // No, we need the numeric value to match against.
+              const ratios = singleSpaces.map(c => c.rotatedWidth / c.rotatedHeight).sort((a,b) => a-b);
+              standardRatio = ratios[Math.floor(ratios.length / 2)];
+              console.log(`Estimated Standard Ratio: ${standardRatio.toFixed(2)}`);
+           }
         }
-        // Fallback or verify standardArea
-        if (standardArea < 500) standardArea = 2500; // Default fallback
-
-        // 第二遍：智能分割大的轮廓
-        // 如果一个轮廓的面积超过单个车位最大面积，尝试分割它
-
+        if (!standardArea || standardArea < 500) standardArea = 2500;
+        console.log(`Estimated Standard Single Area: ${standardArea}`);
+        
         const finalCandidates = [];
-        for (const candidate of candidates) {
-          // 如果面积超过单个车位最大面积（肯定是多个车位的组合）
-          if (candidate.area > maxSingleSpaceArea) {
-            // 检查是否有其他候选轮廓在这个轮廓内部
+        // Use a Queue for recursive processing of splits
+        const processingQueue = [...candidates];
+        
+        let loopCount = 0;
+        const maxLoops = 1000; // Safety break
+        
+        while (processingQueue.length > 0 && loopCount < maxLoops) {
+          loopCount++;
+          const candidate = processingQueue.shift();
+          
+          let splitResult = [];
+          
+          // 0. Safety Check
+          // If candidate is too small, don't even try to split.
+          if (candidate.area < standardArea * 0.5) {
+               finalCandidates.push(candidate);
+               continue;
+          }
+
+          // 1. 优先尝试：基于颜色分布(Blue/Green line)进行分割
+          if (candidate.area > standardArea * 0.8) {
+             // 尝试通过文字分布判断排列方向
+            let orientationHint = null;
+            try {
+              if (candidate.area > standardArea * 0.9) {
+                 orientationHint = await this.analyzeTextOrientation(src, candidate);
+              }
+            } catch (e) {
+              console.warn('文字方向分析出错:', e);
+            }
+
+            const splitByColor = this.splitLargeContourByColorProfile(src, candidate, standardArea, orientationHint, standardRatio);
+            if (splitByColor.length > 1) {
+              console.log(`基于颜色分割线分割/递归: 面积=${candidate.area}, 分割成${splitByColor.length}个`);
+              // Push back to queue for further splitting (e.g. grid 2x3 -> 2x1 + 2x2...)
+              splitResult = splitByColor;
+            }
+          }
+          
+          if (splitResult.length > 1) {
+             processingQueue.push(...splitResult);
+             continue;
+          }
+
+          // 2. 尝试几何分割 (Area Based)
+          // Aggressive split threshold
+          const splitThreshold = Math.max(maxSingleSpaceArea, standardArea * 1.5);
+          
+          if (candidate.area > splitThreshold) {
+            // ... internal contour checks ...
             const innerCandidates = candidates.filter(other => {
               if (other === candidate) return false;
-              
-              // 检查 other 的中心点是否在 candidate 内部
               const isInside = (
                 other.centerX >= candidate.x &&
                 other.centerX <= candidate.x + candidate.width &&
                 other.centerY >= candidate.y &&
                 other.centerY <= candidate.y + candidate.height
               );
-              
-              // 检查 other 的面积是否明显小于 candidate（说明是内部轮廓）
               return isInside && other.area < candidate.area * 0.7;
             });
             
-            // 如果包含2个或以上的内部轮廓，说明这是多个车位的组合
-            // 保留内部的小轮廓，丢弃大的组合轮廓
             if (innerCandidates.length >= 2) {
-              console.log(`分割大的组合轮廓: 面积=${candidate.area}, 包含${innerCandidates.length}个内部轮廓`);
-              // 将内部轮廓添加到最终列表
-              finalCandidates.push(...innerCandidates);
-              continue; // 跳过大的组合轮廓
+               processingQueue.push(...innerCandidates);
+               continue; // Processed
             }
             
-            // 如果没有内部轮廓，尝试基于分割线进行分割
+            // ... Separating Lines check ...
             const splitSpaces = this.splitLargeContourBySeparatingLines(candidate, separatingLines, maxSingleSpaceArea);
             if (splitSpaces.length > 1) {
-              console.log(`基于蓝色线条分割大轮廓: 面积=${candidate.area}, 分割成${splitSpaces.length}个`);
-              finalCandidates.push(...splitSpaces);
+              processingQueue.push(...splitSpaces);
               continue;
             }
             
-            // 如果基于线条无法分割，尝试基于面积和旋转几何分割（更精准）
-            const splitSpacesByArea = this.splitLargeContourByArea(candidate, maxSingleSpaceArea, standardArea);
+            // Fallback: Area Split with Aspect Ratio checking
+            const splitSpacesByArea = this.splitLargeContourByArea(candidate, maxSingleSpaceArea, standardArea, null, standardRatio);
             if (splitSpacesByArea.length > 1) {
               console.log(`基于面积分割大轮廓: 面积=${candidate.area}, 分割成${splitSpacesByArea.length}个`);
-              finalCandidates.push(...splitSpacesByArea);
+              processingQueue.push(...splitSpacesByArea);
               continue;
             }
-            
-            // 如果无法分割，保留原始大轮廓（与其丢弃，不如保留一个大的）
-            console.log(`无法分割大轮廓，保留原始轮廓: 面积=${candidate.area}`);
-            finalCandidates.push(candidate);
-            continue;
           }
           
+          // If no split happened, it's final
           finalCandidates.push(candidate);
         }
 
@@ -457,6 +521,84 @@ export default {
         alert('识别失败: ' + errorMessage);
       } finally {
         this.isProcessing = false;
+      }
+    },
+    // 分析候选区域内的文字排列方向
+    async analyzeTextOrientation(srcMat, candidate) {
+      if (!this.worker) return null;
+      
+      try {
+        const { rotatedWidth, rotatedHeight, rawAngle, centerX, centerY } = candidate;
+        
+        // 1. 提取并校正(Deskew)候选区域图像
+        const center = new cv.Point(centerX, centerY);
+        const M = cv.getRotationMatrix2D(center, rawAngle, 1.0);
+        
+        // 调整平移量，使剪裁后的图像居中
+        const width = rotatedWidth;
+        const height = rotatedHeight;
+        
+        // 修改矩阵的平移部分
+        const data = M.data64F;
+        data[2] += (width / 2.0) - center.x;
+        data[5] += (height / 2.0) - center.y;
+        
+        const dst = new cv.Mat();
+        const dsize = new cv.Size(width, height);
+        cv.warpAffine(srcMat, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar(255, 255, 255, 255));
+        
+        // 2. 转换为 Canvas 进行 OCR
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        cv.imshow(canvas, dst);
+        
+        // 清理 OpenCV 对象
+        dst.delete();
+        M.delete();
+        
+        // 3. 运行 OCR
+        const { data: { words } } = await this.worker.recognize(canvas);
+        
+        // 过滤有效单词 (数字/字母)
+        const validWords = words.filter(w => {
+           const text = w.text.trim();
+           return text.length > 0 && /\w/.test(text) && w.confidence > 50;
+        });
+        
+        if (validWords.length < 2) return null; // 只有一个词或没有词，无法判断相对分布
+        
+        // 4. 分析方差判断分布
+        let sumX = 0, sumY = 0;
+        const centers = validWords.map(w => {
+           const bbox = w.bbox;
+           const cx = (bbox.x0 + bbox.x1) / 2;
+           const cy = (bbox.y0 + bbox.y1) / 2;
+           sumX += cx;
+           sumY += cy;
+           return { cx, cy };
+        });
+        
+        const avgX = sumX / centers.length;
+        const avgY = sumY / centers.length;
+        
+        let varX = 0, varY = 0;
+        centers.forEach(c => {
+           varX += Math.pow(c.cx - avgX, 2);
+           varY += Math.pow(c.cy - avgY, 2);
+        });
+        
+        console.log(`ROI 文字分布: VarX=${varX.toFixed(0)}, VarY=${varY.toFixed(0)}, Words=${validWords.map(w=>w.text).join(',')}`);
+
+        // 阈值判断：如果一个方向的离散度明显大于另一个方向
+        if (varX > varY * 1.5) return 'horizontal'; // 横向排列 (Row) -> 文字左右分布
+        if (varY > varX * 1.5) return 'vertical';   // 纵向排列 (Column) -> 文字上下分布
+        
+        return null;
+        
+      } catch (e) {
+        console.warn('文字方向分析失败:', e);
+        return null; // Fallback to geometry
       }
     },
     calculateAngle(approx) {
@@ -673,7 +815,7 @@ export default {
       return splitSpaces;
     },
     // 基于面积和旋转几何分割大的轮廓
-    splitLargeContourByArea(candidate, maxSingleArea, standardArea) {
+    splitLargeContourByArea(candidate, maxSingleArea, standardArea, orientationHint = null, standardRatio = null) {
       const splitSpaces = [];
       const targetArea = standardArea || (maxSingleArea / 2);
       
@@ -687,10 +829,34 @@ export default {
       // Determine the geometry using rotated dimensions
       const { rotatedWidth, rotatedHeight, rawAngle, centerX, centerY, angle } = candidate;
       
-      // Determine split axis (split along the longer dimension of the rotated rect)
-      // Note: rawAngle relates to the side corresponding to 'width' in some OpenCV versions, 
-      // but easiest is just to compare w and h.
-      const isWidthLonger = rotatedWidth > rotatedHeight;
+      // Determine split axis based on which split produces roughly consistent Aspect Ratio
+      // Current Aspect Ratio
+      // const currentRatio = rotatedWidth / rotatedHeight;
+      
+      let isWidthLonger = rotatedWidth > rotatedHeight;
+      
+      // If we split Width, new ratio is (W/N) / H = Ratio / N
+      // If we split Height, new ratio is W / (H/N) = Ratio * N
+      
+      // Check which one is closer to standardRatio (if valid)
+      if (standardRatio) {
+          const ratioIfSplitWidth = (rotatedWidth / estimatedCount) / rotatedHeight;
+          const ratioIfSplitHeight = rotatedWidth / (rotatedHeight / estimatedCount);
+          
+          const diffW = Math.abs(ratioIfSplitWidth - standardRatio);
+          const diffH = Math.abs(ratioIfSplitHeight - standardRatio);
+          
+          if (diffW < diffH) {
+              isWidthLonger = true; // Split Width
+          } else {
+              isWidthLonger = false; // Split Height
+          }
+      } else {
+           // Fallback to text hint or geometry
+          if (orientationHint === 'horizontal') isWidthLonger = true;
+          else if (orientationHint === 'vertical') isWidthLonger = false;
+      }
+
       const longDim = isWidthLonger ? rotatedWidth : rotatedHeight;
       const shortDim = isWidthLonger ? rotatedHeight : rotatedWidth;
       
@@ -759,6 +925,269 @@ export default {
       }
       
       console.log(`精确分割(Area+Rot): 面积=${candidate.area.toFixed(0)} -> ${estimatedCount}个车位, 目标面积=${targetArea}`);
+      return splitSpaces;
+    },
+    // Split using color profile logic (projection of Blue/Green pixels)
+    // Split using color profile logic (projection of Blue/Green pixels)
+    splitLargeContourByColorProfile(srcMat, candidate, maxSingleArea, orientationHint, standardRatio) {
+      const cv = window.cv;
+      const splitSpaces = [];
+      try {
+        // 1. Deskew the ROI
+        const { rotatedWidth, rotatedHeight, rawAngle, centerX, centerY } = candidate;
+        
+        // Decide standard or target number of spaces to look for
+        // Don't limit by estimated count strictly. If we find a strong line, we split.
+        // But we avoid splitting things that are clearly too small.
+        if (candidate.area < maxSingleArea * 0.5) return [];
+
+        const center = new cv.Point(centerX, centerY);
+        const M = cv.getRotationMatrix2D(center, rawAngle, 1.0);
+         // Adjust translation
+        const width = rotatedWidth;
+        const height = rotatedHeight;
+        M.data64F[2] += (width / 2.0) - center.x;
+        M.data64F[5] += (height / 2.0) - center.y;
+        
+        const dst = new cv.Mat();
+        const dsize = new cv.Size(width, height);
+        cv.warpAffine(srcMat, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar(0, 0, 0, 0));
+        M.delete();
+
+        // 2. Create Blue/Green Mask on the deskewed ROI
+        const rgb = new cv.Mat();
+        const hsv = new cv.Mat();
+        cv.cvtColor(dst, rgb, cv.COLOR_RGBA2RGB);
+        cv.cvtColor(rgb, hsv, cv.COLOR_RGB2HSV);
+        rgb.delete();
+
+        // Blue mask - Widen the range to catch dark blue/light blue
+        // Hue: Blue is roughly 240 deg -> ~120 in OpenCV (0-180). Range 100-140 is good.
+        // Saturation: Allow lower saturation (grayish blue).
+        // Value: Allow darker blue.
+        const lowerBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [90, 40, 30, 0]);
+        const upperBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [140, 255, 255, 0]);
+        const blueMask = new cv.Mat();
+        cv.inRange(hsv, lowerBlue, upperBlue, blueMask);
+        
+        // Green mask
+        const lowerGreen = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [35, 40, 40, 0]);
+        const upperGreen = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [85, 255, 255, 0]);
+        const greenMask = new cv.Mat();
+        cv.inRange(hsv, lowerGreen, upperGreen, greenMask);
+
+        // Combined
+        const combinedMask = new cv.Mat();
+        cv.bitwise_or(blueMask, greenMask, combinedMask);
+        
+        // Morphological Dilate to make lines thicker and connected
+        // This helps significantly if the line is thin or dashed
+        const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+        cv.dilate(combinedMask, combinedMask, kernel);
+        kernel.delete();
+
+        // 3. Scan BOTH directions and find the best separating lines
+        
+        const findBestPeaks = (lookForVerticalLines) => {
+             const length = lookForVerticalLines ? width : height;
+             const thickness = lookForVerticalLines ? height : width;
+             
+             const maskData = combinedMask.data;
+             const cols = combinedMask.cols;
+             const rows = combinedMask.rows;
+             
+             const projection = [];
+             for (let i = 0; i < length; i++) {
+                let sum = 0;
+                if (lookForVerticalLines) {
+                     // Sum column i
+                     for (let r = 0; r < rows; r++) {
+                         if (maskData[r * cols + i] > 0) sum++;
+                     }
+                } else {
+                     // Sum row i
+                     for (let c = 0; c < cols; c++) {
+                         if (maskData[i * cols + c] > 0) sum++;
+                     }
+                }
+                projection.push(sum);
+             }
+             
+             // Dynamic Threshold
+             // Lower the hard requirement for thickness coverage.
+             // Even separate dots forming a line should count.
+             const maxVal = Math.max(...projection);
+             // Use 10% of thickness or 30% of max peak as threshold
+             const threshold = Math.max(thickness * 0.10, maxVal * 0.3);
+             
+             const peaks = [];
+             for (let i = 5; i < length - 5; i++) {
+                if (projection[i] > threshold) {
+                    let start = i;
+                    while (start > 0 && projection[start] > threshold * 0.5) start--;
+                    let end = i;
+                    while (end < length - 1 && projection[end] > threshold * 0.5) end++;
+                    
+                    const centerIdx = Math.round((start + end) / 2);
+                    const peakWidth = end - start;
+                    const peakHeight = projection[centerIdx];
+                    
+                    if (!peaks.some(p => Math.abs(p.idx - centerIdx) < 20)) {
+                        peaks.push({ idx: centerIdx, width: peakWidth, height: peakHeight });
+                    }
+                    i = end; 
+                }
+             }
+             return { peaks, maxVal, threshold };
+        };
+
+        const resX = findBestPeaks(true);  // Vertical lines (Splitting width)
+        const resY = findBestPeaks(false); // Horizontal lines (Splitting height)
+        
+        // Multi-factor Scoring to decide direction
+        let useVerticalSplit = true; 
+        
+        const scoreDirection = (res, isVerticalSplit) => {
+            if (res.peaks.length === 0) return 0;
+            
+            // 1. Peak Evidence Score
+            let peakScore = res.peaks.reduce((acc, p) => acc + p.height, 0);
+            
+            // 2. Aspect Ratio Match Score (Crucial but trust Strong Peaks more)
+            // Calculate relative strength of the peak (how long the line is vs the dimension)
+            // peak.height is the sum of pixels. dimension is 'thickness'.
+            const thickness = isVerticalSplit ? height : width; // The dimension along the line
+            const maxLineConsistency = res.maxVal / thickness; // 0.0 to 1.0 (1.0 means solid line)
+            
+            if (standardRatio) {
+               // What would the ratio be if we split this way?
+               // Assuming equal split by peak count+1
+               const count = res.peaks.length + 1;
+               let resultingRatio; 
+               if (isVerticalSplit) {
+                   // Splitting Width
+                   resultingRatio = (width / count) / height;
+               } else {
+                   // Splitting Height
+                   resultingRatio = width / (height / count);
+               }
+               
+               // Calculate deviation from standard
+               const dev = Math.abs(resultingRatio - standardRatio) / standardRatio;
+               
+               // Logic: If line is very strong (>40% solid), ignore ratio mismatch (could look weird but line is real)
+               // Lower threshold for "Strong line" because rotation errors can smudge the line.
+               if (maxLineConsistency > 0.4) {
+                   peakScore *= 5.0; // Trust the strong line HEAVILY
+               } else {
+                   // Normal ratio check
+                   if (dev < 0.3) peakScore *= 3.0; // Strong shape match
+                   else if (dev > 1.0) peakScore *= 0.5; // Mild Penalty (don't kill it completely)
+               }
+            } else {
+               // No standard ratio yet? Trust strong lines.
+               if (maxLineConsistency > 0.4) peakScore *= 2.0;
+            }
+            
+            return peakScore;
+        };
+        
+        const scoreX = scoreDirection(resX, true);
+        const scoreY = scoreDirection(resY, false);
+        
+        console.log(`Split Scores: Vertical=${scoreX.toFixed(0)}, Horizontal=${scoreY.toFixed(0)}`);
+        
+        if (scoreX === 0 && scoreY === 0) return []; // No lines found
+        
+        useVerticalSplit = scoreX >= scoreY;
+        
+        const bestPeaks = useVerticalSplit ? resX.peaks : resY.peaks;
+        const length = useVerticalSplit ? width : height;
+        
+        // 5. Construct new spaces
+        if (bestPeaks.length > 0) {
+            // Sort peaks
+            const peakIndices = bestPeaks.map(p => p.idx).sort((a, b) => a - b);
+            
+            // Define boundaries
+            const boundaries = [0, ...peakIndices, length];
+            
+            // Validate segments
+            const validSegments = [];
+            for (let i = 0; i < boundaries.length - 1; i++) {
+                const segStart = boundaries[i];
+                const segEnd = boundaries[i+1];
+                const segLen = segEnd - segStart;
+                
+                if (segLen > 20) {
+                    validSegments.push({ start: segStart, end: segEnd, len: segLen });
+                }
+            }
+
+            // If valid split found
+            if (validSegments.length >= 2) {
+                 // Convert back to original coordinate system
+                 const rad = (rawAngle * Math.PI) / 180;
+                 const cos = Math.cos(rad);
+                 const sin = Math.sin(rad);
+                 
+                 validSegments.forEach(seg => {
+                     const segMid = (seg.start + seg.end) / 2;
+                     
+                     let dx_d, dy_d, splitW, splitH;
+                     
+                     if (useVerticalSplit) {
+                         dx_d = segMid - width / 2;
+                         dy_d = 0;
+                         splitW = seg.len;
+                         splitH = height;
+                     } else {
+                         dx_d = 0;
+                         dy_d = segMid - height / 2;
+                         splitW = width;
+                         splitH = seg.len;
+                     }
+                     
+                     // Rotate this offset back to original space
+                     const dx_orig = dx_d * cos - dy_d * sin;
+                     const dy_orig = dx_d * sin + dy_d * cos;
+                     
+                     const newCX = centerX + dx_orig;
+                     const newCY = centerY + dy_orig;
+                     
+                     // Calculate approximate new W/H for global Axis Aligned Box (estimation)
+                     const newExtentW = Math.abs(splitW * cos) + Math.abs(splitH * sin);
+                     const newExtentH = Math.abs(splitW * sin) + Math.abs(splitH * cos);
+
+                     splitSpaces.push({
+                        x: newCX - newExtentW / 2,
+                        y: newCY - newExtentH / 2,
+                        width: newExtentW,
+                        height: newExtentH,
+                        angle: candidate.angle, // Keep normalized angle
+                        rawAngle: rawAngle,
+                        rotatedWidth: splitW,
+                        rotatedHeight: splitH,
+                        number: null,
+                        area: splitW * splitH,
+                        centerX: newCX,
+                        centerY: newCY,
+                        id: Math.random().toString(36).substr(2, 9),
+                     });
+                 });
+            }
+        }
+        
+        // Clean up
+        dst.delete();
+        hsv.delete();
+        lowerBlue.delete(); upperBlue.delete(); blueMask.delete();
+        lowerGreen.delete(); upperGreen.delete(); greenMask.delete();
+        combinedMask.delete();
+
+      } catch (e) {
+          console.error("Color profile split failed", e);
+      }
       return splitSpaces;
     },
     // 非极大值抑制（NMS）去除重复检测
@@ -943,6 +1372,7 @@ export default {
     },
     // 检测浅色背景区域（车位通常有浅色背景）
     async detectLightBackgroundRegions(srcMat) {
+      const cv = window.cv;
       const regions = [];
       try {
         // 转换为灰度图
@@ -1025,6 +1455,7 @@ export default {
     },
     // 验证区域是否符合车位特征
     async validateParkingSpace(srcMat, boundingBox) {
+      const cv = window.cv;
       try {
         // 检查1：区域大小是否合理
         if (boundingBox.width < 50 || boundingBox.height < 50) return false;
@@ -1085,6 +1516,7 @@ export default {
     },
     // 从轮廓计算角度
     calculateAngleFromContour(cnt) {
+      const cv = window.cv;
       try {
         const epsilon = 0.02 * cv.arcLength(cnt, true);
         const approx = new cv.Mat();
@@ -1097,6 +1529,92 @@ export default {
       }
     },
     async extractSpaceNumber(srcMat, x, y, width, height) {
+      const cv = window.cv;
+      // Use efficient worker if available
+      if (this.worker) {
+        try {
+           const roi = new cv.Rect(
+            Math.max(0, x),
+            Math.max(0, y),
+            Math.min(width, srcMat.cols - x),
+            Math.min(height, srcMat.rows - y)
+          );
+          const cropped = srcMat.roi(roi);
+          
+          // Preprocess: Filter out colored lines (Blue lines)
+          // Text is black. Background is light. Lines are blue.
+          // Strategy: Convert to HSV, mask out distinct colors (like Blue), result in white.
+          // Or simply binarize with simple threshold might work if blue is light enough?
+          // But blue line is dark. Black text is darker.
+          
+          const rgb = new cv.Mat();
+          cv.cvtColor(cropped, rgb, cv.COLOR_RGBA2RGB);
+          
+          const hsv = new cv.Mat();
+          cv.cvtColor(rgb, hsv, cv.COLOR_RGB2HSV);
+          rgb.delete();
+
+          // Create mask for non-black/gray stuff (i.e. colored stuff like blue lines)
+          // Blue is around H=100-130.
+          const lowerBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [90, 50, 50, 0]);
+          const upperBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [140, 255, 255, 0]);
+          const blueMask = new cv.Mat();
+          cv.inRange(hsv, lowerBlue, upperBlue, blueMask);
+          
+          // Inpaint/Remove blue lines on the original image (make them white)
+          // We can use the mask to set pixels in 'cropped' to white (255,255,255)
+          // Note: cropped is RGBA or BGR? imread usually RGBA in canvas.
+          
+          // Let's iterate pixels? Or use bitwise instructions.
+          // Set to white where blueMask is 255
+          const whiteMat = new cv.Mat(cropped.rows, cropped.cols, cropped.type(), new cv.Scalar(255, 255, 255, 255));
+          cropped.copyTo(whiteMat, blueMask); // Copy existing where mask is non-zero? No, we want to OVERWRITE blue with white.
+          // bitwise_not of mask -> non-blue area.
+          const notBlue = new cv.Mat();
+          cv.bitwise_not(blueMask, notBlue);
+          
+          const finalImg = new cv.Mat();
+          // Copy original where it is NOT blue
+          cropped.copyTo(finalImg, notBlue);
+          // Add white where it IS blue (effectively replacing blue with black? No, uninitialized is 0)
+          // We need white background.
+          // Initialize finalImg with White
+          finalImg.setTo(new cv.Scalar(255, 255, 255, 255));
+          cropped.copyTo(finalImg, notBlue);
+          
+          // Now binarize to separate text (Black) from Background (White)
+          const gray = new cv.Mat();
+          cv.cvtColor(finalImg, gray, cv.COLOR_RGBA2GRAY);
+          cv.threshold(gray, gray, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
+          
+          // Show this cleaned image to Tesseract
+          const canvas = document.createElement('canvas');
+          canvas.width = gray.cols;
+          canvas.height = gray.rows;
+          cv.imshow(canvas, gray);
+          
+          // Clean
+          cropped.delete();
+          hsv.delete();
+          lowerBlue.delete(); upperBlue.delete(); blueMask.delete();
+          notBlue.delete();
+          whiteMat.delete();
+          finalImg.delete();
+          gray.delete();
+
+          // Reuse worker
+          const { data: { text } } = await this.worker.recognize(canvas);
+          const cleanedText = text.trim().replace(/\s+/g, '');
+          const match = cleanedText.match(/([A-Z]?\d+)/);
+          return match ? match[1] : null;
+
+        } catch (e) {
+          console.warn('OCR error', e);
+          return null;
+        }
+      }
+
+      // Legacy fallback (slower)
       try {
         // 提取车位号区域
         const roi = new cv.Rect(
