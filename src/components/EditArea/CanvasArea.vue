@@ -74,6 +74,39 @@ export default {
         backgroundColor: '#f5f5f5',
       });
       
+      // 设置全局选中框默认样式，使其更明显
+      this.canvas.on('selection:created', (e) => {
+        const activeObject = e.selected?.[0] || this.canvas.getActiveObject();
+        if (activeObject) {
+          activeObject.set({
+            borderColor: '#FF5722', // 醒目的橙红色边框
+            cornerColor: '#FF5722', // 控制点颜色
+            cornerSize: 12, // 增大控制点尺寸
+            borderScaleFactor: 2, // 边框宽度缩放因子
+            cornerStyle: 'circle', // 圆形控制点
+            transparentCorners: false, // 控制点不透明
+            borderDashArray: [5, 5], // 虚线边框，更醒目
+          });
+          this.canvas.renderAll();
+        }
+      });
+      
+      this.canvas.on('selection:updated', (e) => {
+        const activeObject = e.selected?.[0] || this.canvas.getActiveObject();
+        if (activeObject) {
+          activeObject.set({
+            borderColor: '#FF5722',
+            cornerColor: '#FF5722',
+            cornerSize: 12,
+            borderScaleFactor: 2,
+            cornerStyle: 'circle',
+            transparentCorners: false,
+            borderDashArray: [5, 5],
+          });
+          this.canvas.renderAll();
+        }
+      });
+      
       // 如果有传入的图片URL，加载它
       if (this.imageUrl) {
         await this.loadImageFromUrl(this.imageUrl);

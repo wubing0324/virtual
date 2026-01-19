@@ -109,8 +109,8 @@ export default {
       dragStartX: 0,
       dragStartY: 0,
       // 初始位置
-      x: window.innerWidth - 320, 
-      y: 100,
+      x: window.innerWidth - 670, 
+      y: 70,
     };
   },
   mounted() {
@@ -168,7 +168,7 @@ export default {
 
 .panel-header {
   padding: 10px 15px;
-  background: #f8f9fa;
+  background: #d9eeff;
   border-bottom: 1px solid #eee;
   display: flex;
   justify-content: space-between;
@@ -234,7 +234,7 @@ export default {
   padding: 6px 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 15px;
   width: 100%;
   box-sizing: border-box;
 }

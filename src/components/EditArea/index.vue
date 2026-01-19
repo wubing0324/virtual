@@ -379,6 +379,14 @@ export default {
         selectable: true,
         hasControls: true,
         hasBorders: true,
+        // 增强选中框可见性
+        borderColor: '#FF5722', // 醒目的橙红色边框
+        cornerColor: '#FF5722', // 控制点颜色
+        cornerSize: 12, // 增大控制点尺寸
+        borderScaleFactor: 2, // 边框宽度缩放因子
+        cornerStyle: 'circle', // 圆形控制点
+        transparentCorners: false, // 控制点不透明
+        borderDashArray: [5, 5], // 虚线边框，更醒目
       });
 
       // 添加车位信息
@@ -446,18 +454,23 @@ export default {
     focusOnSpace(space, index) {
       if (!this.canvas) return;
       
-      // 查找对应的 Fabric 对象
-      const fabricObj = this.spaceFabricObjects.get(index);
+      // 优先通过 ID 查找对象（更可靠）
+      const objects = this.canvas.getObjects();
+      let fabricObj = null;
+      
+      if (space.id) {
+        fabricObj = objects.find(obj => obj.id === space.id);
+      }
+      
+      // 如果通过 ID 找不到，尝试通过索引查找
       if (!fabricObj) {
-        // 如果映射中没有，尝试从画布中查找
-        const objects = this.canvas.getObjects();
-        const found = objects.find(obj => obj.parkingIndex === index);
-        if (found) {
-          this.selectAndFocusObject(found);
-          this.selectedSpaceIndex = index;
-          return;
+        fabricObj = this.spaceFabricObjects.get(index);
+        if (!fabricObj) {
+          fabricObj = objects.find(obj => obj.parkingIndex === index);
         }
-      } else {
+      }
+      
+      if (fabricObj) {
         this.selectAndFocusObject(fabricObj);
         this.selectedSpaceIndex = index;
       }
@@ -465,6 +478,17 @@ export default {
     // 选中并聚焦到对象
     selectAndFocusObject(fabricObj) {
       if (!this.canvas || !fabricObj) return;
+      
+      // 增强选中框样式，使其更明显
+      fabricObj.set({
+        borderColor: '#FF5722', // 醒目的橙红色边框
+        cornerColor: '#FF5722', // 控制点颜色
+        cornerSize: 12, // 增大控制点尺寸
+        borderScaleFactor: 2, // 边框宽度缩放因子
+        cornerStyle: 'circle', // 圆形控制点
+        transparentCorners: false, // 控制点不透明
+        borderDashArray: [5, 5], // 虚线边框，更醒目
+      });
       
       // 选中对象
       this.canvas.setActiveObject(fabricObj);
@@ -490,29 +514,45 @@ export default {
         if (!canvasArea) return;
         
         const container = canvasArea.$refs?.canvasContainer;
-        if (container) {
-          const objBounds = fabricObj.getBoundingRect();
-          const containerRect = container.getBoundingClientRect();
-          
-          // 计算对象中心点
-          const objCenterX = objBounds.left + objBounds.width / 2;
-          const objCenterY = objBounds.top + objBounds.height / 2;
-          
-          // 计算容器中心点
-          const containerCenterX = containerRect.width / 2;
-          const containerCenterY = containerRect.height / 2;
-          
-          // 计算需要滚动的距离
-          const scrollLeft = objCenterX - containerCenterX;
-          const scrollTop = objCenterY - containerCenterY;
-          
-          // 平滑滚动到对象位置
-          container.scrollTo({
-            left: container.scrollLeft + scrollLeft,
-            top: container.scrollTop + scrollTop,
-            behavior: 'smooth',
-          });
-        }
+        if (!container) return;
+        
+        // 获取对象在画布上的坐标（考虑旋转和缩放）
+        const objBounds = fabricObj.getBoundingRect();
+        
+        // 获取容器的可视区域大小
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+        
+        // 对象在画布上的位置（相对于画布左上角）
+        const objLeft = objBounds.left;
+        const objTop = objBounds.top;
+        const objWidth = objBounds.width;
+        const objHeight = objBounds.height;
+        
+        // 对象中心点在画布上的位置
+        const objCenterX = objLeft + objWidth / 2;
+        const objCenterY = objTop + objHeight / 2;
+        
+        // 计算容器中心点位置
+        const containerCenterX = containerWidth / 2;
+        const containerCenterY = containerHeight / 2;
+        
+        // 计算需要滚动的距离，使对象中心点对齐到容器中心点
+        let targetScrollLeft = objCenterX - containerCenterX;
+        let targetScrollTop = objCenterY - containerCenterY;
+        
+        // 确保滚动位置不超出边界
+        const maxScrollLeft = Math.max(0, this.canvas.width - containerWidth);
+        const maxScrollTop = Math.max(0, this.canvas.height - containerHeight);
+        targetScrollLeft = Math.max(0, Math.min(targetScrollLeft, maxScrollLeft));
+        targetScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop));
+        
+        // 平滑滚动到目标位置
+        container.scrollTo({
+          left: targetScrollLeft,
+          top: targetScrollTop,
+          behavior: 'smooth',
+        });
       });
     },
   },
