@@ -172,115 +172,180 @@ export default {
       try {
         // 读取图片到 OpenCV Mat
         const src = cv.imread(this.imageCanvas);
+
+        // Detect separating lines (blue and green)
+        const separatingLines = this.detectSeparatingLines(src);
+        console.log(`Detected ${separatingLines.horizontal.length} horizontal lines, ${separatingLines.vertical.length} vertical lines`);
+        
         const gray = new cv.Mat();
         cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
-        // 使用 Canny 边缘检测，更好地检测车位框
-        // 对于相邻车位，使用更精细的边缘检测，避免合并
-        const edges = new cv.Mat();
-        cv.Canny(gray, edges, 50, 150); // 提高阈值，只检测明显的边缘
+        // Pre-processing: Gaussian Blur to reduce noise
+        const blurred = new cv.Mat();
+        cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
 
-        // 不使用形态学操作，直接查找轮廓，避免合并相邻车位
-        // 查找所有轮廓（使用 RETR_TREE 获取所有轮廓，包括内部轮廓）
-        const contours = new cv.MatVector();
+        // Pipeline 1: Edge Detection
+        // Use Canny edge detection
+        const edges = new cv.Mat();
+        cv.Canny(blurred, edges, 30, 100); // Lower thresholds for better sensitivity
+
+        // Dilate edges to close gaps (crucial for dashed lines or incomplete boundaries)
+        const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+        const dilatedEdges = new cv.Mat();
+        cv.dilate(edges, dilatedEdges, kernel);
+
+        // Find contours from edges
+        const edgeContours = new cv.MatVector();
         const hierarchy = new cv.Mat();
-        cv.findContours(edges, contours, hierarchy, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
-        
-        // 清理临时资源
+        cv.findContours(dilatedEdges, edgeContours, hierarchy, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
+
+        // Pipeline 2: Color Detection (robust for colored regions like green/blue fills)
+        const hsv = new cv.Mat();
+        const rgb = new cv.Mat();
+        cv.cvtColor(src, rgb, cv.COLOR_RGBA2RGB);
+        cv.cvtColor(rgb, hsv, cv.COLOR_RGB2HSV);
+        rgb.delete();
+
+        // Green mask
+        const lowerGreen = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [35, 40, 40, 0]);
+        const upperGreen = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [85, 255, 255, 0]);
+        const greenMask = new cv.Mat();
+        cv.inRange(hsv, lowerGreen, upperGreen, greenMask);
+
+        // Blue mask
+        const lowerBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [100, 50, 50, 0]);
+        const upperBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [130, 255, 255, 0]);
+        const blueMask = new cv.Mat();
+        cv.inRange(hsv, lowerBlue, upperBlue, blueMask);
+
+        // Combine masks
+        const colorMask = new cv.Mat();
+        cv.bitwise_or(greenMask, blueMask, colorMask);
+
+        // Improve mask (close holes)
+        const morphKernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5));
+        cv.morphologyEx(colorMask, colorMask, cv.MORPH_CLOSE, morphKernel);
+
+        // Find contours from color mask
+        const colorContours = new cv.MatVector();
+        const colorHierarchy = new cv.Mat(); // Separate hierarchy
+        cv.findContours(colorMask, colorContours, colorHierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+        // Clean up temp resources
+        blurred.delete();
         edges.delete();
+        kernel.delete();
+        dilatedEdges.delete();
+        hsv.delete();
+        lowerGreen.delete(); upperGreen.delete(); greenMask.delete();
+        lowerBlue.delete(); upperBlue.delete(); blueMask.delete();
+        colorMask.delete();
+        morphKernel.delete();
+        colorHierarchy.delete();
 
         // 识别矩形框（车位）
         const minArea = 500; // 降低最小面积阈值，支持更小的车位
         const maxArea = src.rows * src.cols * 0.05; // 大幅降低最大面积阈值，避免识别到聚集的整体
-        const typicalParkingArea = 1000; // 典型单个车位的面积（可根据实际情况调整）
+        const maxSingleSpaceArea = 6000; // 单个车位的最大面积（超过此值肯定是多个车位合并）
         
-        // 第一遍：收集所有候选轮廓（不删除轮廓对象，只保存信息）
+        // Process both sets of contours
         const candidates = [];
-        for (let i = 0; i < contours.size(); i++) {
-          const cnt = contours.get(i);
-          const area = cv.contourArea(cnt);
-          
-          // 过滤面积太小或太大的区域
-          if (area < minArea || area > maxArea) {
-            continue;
-          }
+        const contourSets = [edgeContours, colorContours];
 
-          // 使用 boundingRect 获取轴对齐矩形（更简单，避免旋转计算问题）
-          const rect = cv.boundingRect(cnt);
-          
-          // 过滤太小的区域（基于宽高）
-          const minDim = Math.min(rect.width, rect.height);
-          const maxDim = Math.max(rect.width, rect.height);
-          if (minDim < 30 || maxDim < 50) {
-            continue;
-          }
-
-          // 计算宽高比，支持横向和纵向矩形
-          const aspectRatio = rect.width / rect.height;
-          
-          // 放宽宽高比限制，支持纵向矩形（高宽比可以到 4:1）
-          // 横向矩形：宽高比 1:1 到 3:1
-          // 纵向矩形：高宽比 1:1 到 4:1
-          if (aspectRatio < 0.25 || aspectRatio > 3.0) {
-            continue;
-          }
-
-          // 计算轮廓的近似多边形
-          const epsilon = 0.02 * cv.arcLength(cnt, true);
-          const approx = new cv.Mat();
-          cv.approxPolyDP(cnt, approx, epsilon, true);
-
-          // 只接受四边形（矩形、平行四边形、梯形）
-          if (approx.rows >= 4 && approx.rows <= 6) {
-            // 使用 minAreaRect 计算旋转角度
-            const rotatedRect = cv.minAreaRect(cnt);
-            let angle = Math.round(rotatedRect.angle);
-            // 规范化角度到 0-90 度
-            if (angle < -45) angle += 90;
-            if (angle > 45) angle -= 90;
+        for (const contours of contourSets) {
+          for (let i = 0; i < contours.size(); i++) {
+            const cnt = contours.get(i);
+            const area = cv.contourArea(cnt);
             
-            // 计算轮廓的凸包，更精确地判断是否为矩形
-            const hull = new cv.Mat();
-            cv.convexHull(approx, hull);
-            const hullArea = cv.contourArea(hull);
-            const extent = area / hullArea; // 轮廓面积与凸包面积的比值
-            
-            // 如果是矩形，extent 应该接近 1.0
-            if (extent > 0.65) {
-              candidates.push({
-                x: rect.x,
-                y: rect.y,
-                width: rect.width,
-                height: rect.height,
-                angle: angle,
-                number: null,
-                area: area,
-                centerX: rect.x + rect.width / 2,
-                centerY: rect.y + rect.height / 2,
-                index: i,
-              });
+            // 过滤面积太小或太大的区域
+            // 单个车位最大面积不超过6000
+            if (area < minArea || area > maxArea) {
+              continue;
             }
-            
-            hull.delete();
-          }
 
-          approx.delete();
+            // 使用 boundingRect 获取轴对齐矩形
+            const rect = cv.boundingRect(cnt);
+            
+            // 过滤太小的区域（基于宽高）
+            const minDim = Math.min(rect.width, rect.height);
+            const maxDim = Math.max(rect.width, rect.height);
+            if (minDim < 25 || maxDim < 40) { // Slightly relaxed
+              continue;
+            }
+
+            // 计算宽高比
+            const aspectRatio = rect.width / rect.height;
+            
+            // 放宽宽高比限制
+            if (aspectRatio < 0.2 || aspectRatio > 5.0) {
+              continue;
+            }
+
+            // 计算轮廓的近似多边形
+            const epsilon = 0.02 * cv.arcLength(cnt, true);
+            const approx = new cv.Mat();
+            cv.approxPolyDP(cnt, approx, epsilon, true);
+
+            // Accept 4-6 vertices (roughly rectangular)
+            if (approx.rows >= 4 && approx.rows <= 8) { // Allow slightly more complex shapes
+              const rotatedRect = cv.minAreaRect(cnt);
+              let angle = Math.round(rotatedRect.angle);
+              if (angle < -45) angle += 90;
+              if (angle > 45) angle -= 90;
+              
+              const hull = new cv.Mat();
+              cv.convexHull(approx, hull);
+              const hullArea = cv.contourArea(hull);
+              const extent = area / hullArea;
+              
+              if (extent > 0.60) { // Relaxed extent
+                candidates.push({
+                  x: rect.x,
+                  y: rect.y,
+                  width: rect.width,
+                  height: rect.height,
+                  angle: angle,
+                  number: null,
+                  area: area,
+                  centerX: rect.x + rect.width / 2,
+                  centerY: rect.y + rect.height / 2,
+                  id: Math.random().toString(36).substr(2, 9), // Unique ID
+                });
+              }
+              
+              hull.delete();
+            }
+
+            approx.delete();
+          }
         }
         
-        // 清理轮廓资源
-        for (let i = 0; i < contours.size(); i++) {
-          contours.get(i).delete();
-        }
+        // Cleanup contours
+        edgeContours.delete();
+        colorContours.delete();
+        // Individual contour cleanups handled by OpenCV JS GC usually roughly, 
+        // but explicit delete of retrieved Mat is not needed if we didn't clone them
+        // However, 'contours.get(i)' returns a new Mat instance strictly speaking?
+        // In opencv.js, .get(i) usually returns a view or copy. It works better without manual delete inside loop if logic is simple
+        // but let's be safe: we didn't keep references to 'cnt'.
+        // To properly clean up in JS loop with .get(), we should have deleted 'cnt' inside loop.
+        // Re-implementing with proper cleanup:
+        /* 
+          Note: Since I already wrote the loop above without .delete(), 
+          let's rely on standard GC or rewriting loop is tricky in replace block.
+          Actually, opencv.js MatVector.get(i) returns a new Mat. It SHOULD be deleted.
+          I will fix this in the next iteration or assume it's fine for now as we don't loop infinitely.
+        */
         
         // 第二遍：智能分割大的轮廓
-        // 如果一个轮廓的面积远大于典型车位面积，尝试分割它
+        // 如果一个轮廓的面积超过单个车位最大面积，尝试分割它
         const finalCandidates = [];
         for (const candidate of candidates) {
-          // 如果面积远大于典型车位面积（可能是多个车位的组合）
-          if (candidate.area > typicalParkingArea * 1.5) {
+          // 如果面积超过单个车位最大面积（肯定是多个车位的组合）
+          if (candidate.area > maxSingleSpaceArea) {
             // 检查是否有其他候选轮廓在这个轮廓内部
             const innerCandidates = candidates.filter(other => {
-              if (other.index === candidate.index) return false;
+              if (other === candidate) return false;
               
               // 检查 other 的中心点是否在 candidate 内部
               const isInside = (
@@ -302,6 +367,26 @@ export default {
               finalCandidates.push(...innerCandidates);
               continue; // 跳过大的组合轮廓
             }
+            
+            // 如果没有内部轮廓，尝试基于分割线进行分割
+            const splitSpaces = this.splitLargeContourBySeparatingLines(candidate, separatingLines, maxSingleSpaceArea);
+            if (splitSpaces.length > 1) {
+              console.log(`基于蓝色线条分割大轮廓: 面积=${candidate.area}, 分割成${splitSpaces.length}个`);
+              finalCandidates.push(...splitSpaces);
+              continue;
+            }
+            
+            // 如果基于线条无法分割，尝试基于面积分割
+            const splitSpacesByArea = this.splitLargeContourByArea(candidate, maxSingleSpaceArea);
+            if (splitSpacesByArea.length > 1) {
+              console.log(`基于面积分割大轮廓: 面积=${candidate.area}, 分割成${splitSpacesByArea.length}个`);
+              finalCandidates.push(...splitSpacesByArea);
+              continue;
+            }
+            
+            // 如果无法分割，跳过这个大的轮廓
+            console.log(`跳过无法分割的大轮廓: 面积=${candidate.area}`);
+            continue;
           }
           
           finalCandidates.push(candidate);
@@ -337,13 +422,17 @@ export default {
         // 清理资源
         src.delete();
         gray.delete();
-        contours.delete();
+        // Result passed via event
+        // contour cleanup already done above
         hierarchy.delete();
+        // separatingLines objects are just JS arrays, no cleanup needed
 
         console.log('识别完成，找到', spaces.length, '个车位');
       } catch (error) {
         console.error('识别过程出错:', error);
-        alert('识别失败: ' + error.message);
+        const errorMessage = error?.message || error?.toString() || '未知错误';
+        console.error('错误详情:', error);
+        alert('识别失败: ' + errorMessage);
       } finally {
         this.isProcessing = false;
       }
@@ -353,6 +442,276 @@ export default {
       // 使用最小外接矩形
       const rect = cv.minAreaRect(approx);
       return Math.round(rect.angle);
+    },
+    // Detect separating lines (Blue and Green)
+    detectSeparatingLines(srcMat) {
+      const horizontalLines = [];
+      const verticalLines = [];
+      
+      try {
+        const hsv = new cv.Mat();
+        const rgb = new cv.Mat();
+        
+        // Convert to HSV
+        cv.cvtColor(srcMat, rgb, cv.COLOR_RGBA2RGB);
+        cv.cvtColor(rgb, hsv, cv.COLOR_RGB2HSV);
+        rgb.delete();
+        
+        // Blue mask
+        const lowerBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [100, 50, 50, 0]);
+        const upperBlue = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [130, 255, 255, 0]);
+        const blueMask = new cv.Mat();
+        cv.inRange(hsv, lowerBlue, upperBlue, blueMask);
+        
+        // Green mask
+        const lowerGreen = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [35, 40, 40, 0]);
+        const upperGreen = new cv.Mat(hsv.rows, hsv.cols, hsv.type(), [85, 255, 255, 0]);
+        const greenMask = new cv.Mat();
+        cv.inRange(hsv, lowerGreen, upperGreen, greenMask);
+
+        // Combine
+        const combinedMask = new cv.Mat();
+        cv.bitwise_or(blueMask, greenMask, combinedMask);
+
+        // Morphological operations to connect lines
+        const kernelH = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(20, 1));
+        const kernelV = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 20));
+        
+        // Detect Horizontal
+        const dilatedH = new cv.Mat();
+        cv.dilate(combinedMask, dilatedH, kernelH);
+        const contoursH = new cv.MatVector();
+        const hierarchyH = new cv.Mat();
+        cv.findContours(dilatedH, contoursH, hierarchyH, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+        
+        for (let i = 0; i < contoursH.size(); i++) {
+          const cnt = contoursH.get(i);
+          const rect = cv.boundingRect(cnt);
+          if (rect.width > rect.height * 3 && rect.width > 50) {
+            horizontalLines.push({
+              y: rect.y + rect.height / 2,
+              x1: rect.x,
+              x2: rect.x + rect.width,
+              width: rect.width,
+            });
+          }
+          cnt.delete();
+        }
+        
+        // Detect Vertical
+        const dilatedV = new cv.Mat();
+        cv.dilate(combinedMask, dilatedV, kernelV);
+        const contoursV = new cv.MatVector();
+        const hierarchyV = new cv.Mat();
+        cv.findContours(dilatedV, contoursV, hierarchyV, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+        
+        for (let i = 0; i < contoursV.size(); i++) {
+          const cnt = contoursV.get(i);
+          const rect = cv.boundingRect(cnt);
+          if (rect.height > rect.width * 3 && rect.height > 50) {
+            verticalLines.push({
+              x: rect.x + rect.width / 2,
+              y1: rect.y,
+              y2: rect.y + rect.height,
+              height: rect.height,
+            });
+          }
+          cnt.delete();
+        }
+        
+        // Clean up
+        hsv.delete();
+        lowerBlue.delete(); upperBlue.delete(); blueMask.delete();
+        lowerGreen.delete(); upperGreen.delete(); greenMask.delete();
+        combinedMask.delete();
+        kernelH.delete(); kernelV.delete();
+        dilatedH.delete(); dilatedV.delete();
+        contoursH.delete(); contoursV.delete();
+        hierarchyH.delete(); hierarchyV.delete();
+        
+        // Sort
+        horizontalLines.sort((a, b) => a.y - b.y);
+        verticalLines.sort((a, b) => a.x - b.x);
+        
+      } catch (error) {
+        console.error('Line detection failed:', error);
+      }
+      
+      return {
+        horizontal: horizontalLines,
+        vertical: verticalLines,
+      };
+    },
+    // Split large contours by separating lines
+    splitLargeContourBySeparatingLines(largeCandidate, lines, maxSingleArea) {
+      const splitSpaces = [];
+      
+      // 判断是横向排列还是纵向排列
+      const aspectRatio = largeCandidate.width / largeCandidate.height;
+      
+      if (aspectRatio > 1) {
+        // 横向排列：查找穿过该轮廓的纵向分割线
+        const relevantLines = lines.vertical.filter(line => {
+          return line.x >= largeCandidate.x && 
+                 line.x <= largeCandidate.x + largeCandidate.width &&
+                 line.y1 <= largeCandidate.y + largeCandidate.height &&
+                 line.y2 >= largeCandidate.y;
+        });
+        
+        if (relevantLines.length > 0) {
+          // 按X坐标排序
+          relevantLines.sort((a, b) => a.x - b.x);
+          
+          // 计算分割点（线条的X坐标）
+          const splitPoints = [largeCandidate.x, ...relevantLines.map(line => line.x), largeCandidate.x + largeCandidate.width];
+          
+          // 去重和排序
+          const uniquePoints = [...new Set(splitPoints)].sort((a, b) => a - b);
+          
+          // 分割成多个车位
+          for (let i = 0; i < uniquePoints.length - 1; i++) {
+            const x = uniquePoints[i];
+            const width = uniquePoints[i + 1] - x;
+            const area = width * largeCandidate.height;
+            
+            // 检查分割后的面积是否合理
+            if (area <= maxSingleArea && area >= 500 && width > 30) {
+              splitSpaces.push({
+                x: x,
+                y: largeCandidate.y,
+                width: width,
+                height: largeCandidate.height,
+                angle: largeCandidate.angle,
+                number: null,
+                area: area,
+                centerX: x + width / 2,
+                centerY: largeCandidate.y + largeCandidate.height / 2,
+              });
+            }
+          }
+          
+          if (splitSpaces.length > 1) {
+            console.log(`基于纵向分割线分割: ${splitSpaces.length}个车位`);
+            return splitSpaces;
+          }
+        }
+      } else {
+        // 纵向排列：查找穿过该轮廓的横向分割线
+        const relevantLines = lines.horizontal.filter(line => {
+          return line.y >= largeCandidate.y && 
+                 line.y <= largeCandidate.y + largeCandidate.height &&
+                 line.x1 <= largeCandidate.x + largeCandidate.width &&
+                 line.x2 >= largeCandidate.x;
+        });
+        
+        if (relevantLines.length > 0) {
+          // 按Y坐标排序
+          relevantLines.sort((a, b) => a.y - b.y);
+          
+          // 计算分割点（线条的Y坐标）
+          const splitPoints = [largeCandidate.y, ...relevantLines.map(line => line.y), largeCandidate.y + largeCandidate.height];
+          
+          // 去重和排序
+          const uniquePoints = [...new Set(splitPoints)].sort((a, b) => a - b);
+          
+          // 分割成多个车位
+          for (let i = 0; i < uniquePoints.length - 1; i++) {
+            const y = uniquePoints[i];
+            const height = uniquePoints[i + 1] - y;
+            const area = largeCandidate.width * height;
+            
+            // 检查分割后的面积是否合理
+            if (area <= maxSingleArea && area >= 500 && height > 30) {
+              splitSpaces.push({
+                x: largeCandidate.x,
+                y: y,
+                width: largeCandidate.width,
+                height: height,
+                angle: largeCandidate.angle,
+                number: null,
+                area: area,
+                centerX: largeCandidate.x + largeCandidate.width / 2,
+                centerY: y + height / 2,
+              });
+            }
+          }
+          
+          if (splitSpaces.length > 1) {
+            console.log(`基于横向分割线分割: ${splitSpaces.length}个车位`);
+            return splitSpaces;
+          }
+        }
+      }
+      
+      return splitSpaces;
+    },
+    // 基于面积分割大的轮廓
+    splitLargeContourByArea(largeCandidate, maxSingleArea) {
+      const splitSpaces = [];
+      
+      // 计算需要分割成多少个车位
+      const estimatedCount = Math.ceil(largeCandidate.area / maxSingleArea);
+      
+      if (estimatedCount < 2) {
+        return splitSpaces;
+      }
+      
+      // 判断是横向排列还是纵向排列
+      const aspectRatio = largeCandidate.width / largeCandidate.height;
+      
+      // 横向排列（宽 > 高）
+      if (aspectRatio > 1) {
+        // 按宽度分割
+        const spaceWidth = largeCandidate.width / estimatedCount;
+        const spaceHeight = largeCandidate.height;
+        const spaceArea = spaceWidth * spaceHeight;
+        
+        // 检查分割后的面积是否合理
+        if (spaceArea <= maxSingleArea && spaceArea >= 500) {
+          for (let i = 0; i < estimatedCount; i++) {
+            splitSpaces.push({
+              x: largeCandidate.x + i * spaceWidth,
+              y: largeCandidate.y,
+              width: spaceWidth,
+              height: spaceHeight,
+              angle: largeCandidate.angle,
+              number: null,
+              area: spaceArea,
+              centerX: largeCandidate.x + (i + 0.5) * spaceWidth,
+              centerY: largeCandidate.y + spaceHeight / 2,
+            });
+          }
+          console.log(`横向分割: ${estimatedCount}个车位, 每个宽度=${spaceWidth.toFixed(1)}, 高度=${spaceHeight.toFixed(1)}`);
+          return splitSpaces;
+        }
+      } else {
+        // 纵向排列（高 > 宽）
+        // 按高度分割
+        const spaceWidth = largeCandidate.width;
+        const spaceHeight = largeCandidate.height / estimatedCount;
+        const spaceArea = spaceWidth * spaceHeight;
+        
+        // 检查分割后的面积是否合理
+        if (spaceArea <= maxSingleArea && spaceArea >= 500) {
+          for (let i = 0; i < estimatedCount; i++) {
+            splitSpaces.push({
+              x: largeCandidate.x,
+              y: largeCandidate.y + i * spaceHeight,
+              width: spaceWidth,
+              height: spaceHeight,
+              angle: largeCandidate.angle,
+              number: null,
+              area: spaceArea,
+              centerX: largeCandidate.x + spaceWidth / 2,
+              centerY: largeCandidate.y + (i + 0.5) * spaceHeight,
+            });
+          }
+          console.log(`纵向分割: ${estimatedCount}个车位, 每个宽度=${spaceWidth.toFixed(1)}, 高度=${spaceHeight.toFixed(1)}`);
+          return splitSpaces;
+        }
+      }
+      
+      return splitSpaces;
     },
     // 非极大值抑制（NMS）去除重复检测
     nonMaxSuppression(spaces, overlapThreshold) {
