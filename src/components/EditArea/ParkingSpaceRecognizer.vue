@@ -414,16 +414,9 @@ export default {
           // 1. 优先尝试：基于颜色分布(Blue/Green line)进行分割
           if (candidate.area > standardArea * 0.8) {
              // 尝试通过文字分布判断排列方向
-            let orientationHint = null;
-            try {
-              if (candidate.area > standardArea * 0.9) {
-                 orientationHint = await this.analyzeTextOrientation(src, candidate);
-              }
-            } catch (e) {
-              console.warn('文字方向分析出错:', e);
-            }
+             // (Discarded analyzeTextOrientation logic as per user request, relying on strong line detection)
 
-            const splitByColor = this.splitLargeContourByColorProfile(src, candidate, standardArea, orientationHint, standardRatio);
+            const splitByColor = this.splitLargeContourByColorProfile(src, candidate, standardArea, null, standardRatio);
             if (splitByColor.length > 1) {
               console.log(`基于颜色分割线分割/递归: 面积=${candidate.area}, 分割成${splitByColor.length}个`);
               // Push back to queue for further splitting (e.g. grid 2x3 -> 2x1 + 2x2...)
@@ -521,84 +514,6 @@ export default {
         alert('识别失败: ' + errorMessage);
       } finally {
         this.isProcessing = false;
-      }
-    },
-    // 分析候选区域内的文字排列方向
-    async analyzeTextOrientation(srcMat, candidate) {
-      if (!this.worker) return null;
-      
-      try {
-        const { rotatedWidth, rotatedHeight, rawAngle, centerX, centerY } = candidate;
-        
-        // 1. 提取并校正(Deskew)候选区域图像
-        const center = new cv.Point(centerX, centerY);
-        const M = cv.getRotationMatrix2D(center, rawAngle, 1.0);
-        
-        // 调整平移量，使剪裁后的图像居中
-        const width = rotatedWidth;
-        const height = rotatedHeight;
-        
-        // 修改矩阵的平移部分
-        const data = M.data64F;
-        data[2] += (width / 2.0) - center.x;
-        data[5] += (height / 2.0) - center.y;
-        
-        const dst = new cv.Mat();
-        const dsize = new cv.Size(width, height);
-        cv.warpAffine(srcMat, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar(255, 255, 255, 255));
-        
-        // 2. 转换为 Canvas 进行 OCR
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        cv.imshow(canvas, dst);
-        
-        // 清理 OpenCV 对象
-        dst.delete();
-        M.delete();
-        
-        // 3. 运行 OCR
-        const { data: { words } } = await this.worker.recognize(canvas);
-        
-        // 过滤有效单词 (数字/字母)
-        const validWords = words.filter(w => {
-           const text = w.text.trim();
-           return text.length > 0 && /\w/.test(text) && w.confidence > 50;
-        });
-        
-        if (validWords.length < 2) return null; // 只有一个词或没有词，无法判断相对分布
-        
-        // 4. 分析方差判断分布
-        let sumX = 0, sumY = 0;
-        const centers = validWords.map(w => {
-           const bbox = w.bbox;
-           const cx = (bbox.x0 + bbox.x1) / 2;
-           const cy = (bbox.y0 + bbox.y1) / 2;
-           sumX += cx;
-           sumY += cy;
-           return { cx, cy };
-        });
-        
-        const avgX = sumX / centers.length;
-        const avgY = sumY / centers.length;
-        
-        let varX = 0, varY = 0;
-        centers.forEach(c => {
-           varX += Math.pow(c.cx - avgX, 2);
-           varY += Math.pow(c.cy - avgY, 2);
-        });
-        
-        console.log(`ROI 文字分布: VarX=${varX.toFixed(0)}, VarY=${varY.toFixed(0)}, Words=${validWords.map(w=>w.text).join(',')}`);
-
-        // 阈值判断：如果一个方向的离散度明显大于另一个方向
-        if (varX > varY * 1.5) return 'horizontal'; // 横向排列 (Row) -> 文字左右分布
-        if (varY > varX * 1.5) return 'vertical';   // 纵向排列 (Column) -> 文字上下分布
-        
-        return null;
-        
-      } catch (e) {
-        console.warn('文字方向分析失败:', e);
-        return null; // Fallback to geometry
       }
     },
     calculateAngle(approx) {
