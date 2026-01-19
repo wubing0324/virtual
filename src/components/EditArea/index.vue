@@ -45,6 +45,9 @@
               <div v-if="recognizedSpaces.length > 0" class="spaces-list">
                 <div class="list-header">
                   <span>识别结果 ({{ recognizedSpaces.length }} 个)</span>
+                  <button class="sort-btn" @click="sortSpaces" title="重新排序">
+                    <span class="icon">⇅</span> 排序
+                  </button>
                 </div>
                 <div class="list-items">
                   <div
@@ -207,7 +210,17 @@ export default {
         }
         
         this.canvas.renderAll();
-        this.selectedObject.parkingNumber = value || null;
+        // 确保 selectedObject 响应式更新
+        this.$set(this.selectedObject, 'parkingNumber', value || null);
+        
+        // 同步更新 recognizedSpaces 数据 (使用 ID 查找)
+        if (obj.id) {
+            const targetSpace = this.recognizedSpaces.find(s => s.id === obj.id);
+            if (targetSpace) {
+                this.$set(targetSpace, 'number', value);
+                // 强制更新视图（如果是简单属性可能不需要，但 number 涉及列表渲染）
+            }
+        }
         return;
       }
 
@@ -231,34 +244,49 @@ export default {
       } else {
         this.selectedObject.fill = value;
       }
+
+      // 同步更新 recognizedSpaces 数据 (通用属性)
+      // 使用 ID 查找，不再依赖 index
+      if (this.selectedObject.fabricObject && this.selectedObject.fabricObject.id) {
+        const id = this.selectedObject.fabricObject.id;
+        const targetSpace = this.recognizedSpaces.find(s => s.id === id);
+        
+        if (targetSpace) {
+          if (property === 'left') {
+            targetSpace.x = numValue;
+          } else if (property === 'top') {
+            targetSpace.y = numValue;
+          }
+          // width/height sync is complex due to scale, ignored for now
+        }
+      }
     },
     handleDeleteObject() {
       if (this.selectedObject && this.selectedObject.fabricObject) {
+        // 如果是车位对象，也从 recognizedSpaces 中移除
+        if (this.selectedObject.fabricObject.id) {
+             const id = this.selectedObject.fabricObject.id;
+             const idx = this.recognizedSpaces.findIndex(s => s.id === id);
+             if (idx !== -1) {
+                 this.recognizedSpaces.splice(idx, 1);
+             }
+        }
+        
         this.canvas.remove(this.selectedObject.fabricObject);
         this.canvas.renderAll();
         this.selectedObject = null;
       }
     },
     handleSpacesRecognized(spaces) {
-      // 对车位进行排序
-      const sortedSpaces = [...spaces].sort((a, b) => {
-        // 1. 如果都有车位号，按车位号排序（自然顺序，如 A1, A2, A10）
-        if (a.number && b.number) {
-          return a.number.localeCompare(b.number, undefined, { numeric: true, sensitivity: 'base' });
-        }
-        
-        // 2. 有车位号的排在前面
-        if (a.number && !b.number) return -1;
-        if (!a.number && b.number) return 1;
-        
-        // 3. 如果都没有车位号，按空间位置排序（从上到下，从左到右）
-        // 允许一定的 Y 轴误差（高度的一半），视为同一行
-        const rowThreshold = Math.min(a.height, b.height) * 0.5;
-        if (Math.abs(a.y - b.y) < rowThreshold) {
-          return a.x - b.x;
-        }
-        return a.y - b.y;
+      // 1. 确保每个车位都有 ID
+      spaces.forEach((space, i) => {
+          if (!space.id) {
+              space.id = `space_${Date.now()}_${i}`;
+          }
       });
+
+      // 对车位进行排序
+      const sortedSpaces = [...spaces].sort(this.compareSpaces);
 
       this.recognizedSpaces = sortedSpaces;
       this.spaceFabricObjects.clear(); // 清空之前的映射
@@ -273,6 +301,64 @@ export default {
             this.spaceFabricObjects.set(index, fabricObj);
           }
         });
+      }
+    },
+    // 车位排序比较函数
+    compareSpaces(a, b) {
+      // 1. 如果都有车位号，按车位号排序（自然顺序，如 A1, A2, A10）
+      if (a.number && b.number) {
+        return a.number.localeCompare(b.number, undefined, { numeric: true, sensitivity: 'base' });
+      }
+      
+      // 2. 有车位号的排在前面
+      if (a.number && !b.number) return -1;
+      if (!a.number && b.number) return 1;
+      
+      // 3. 如果都没有车位号，按空间位置排序（从上到下，从左到右）
+      // 允许一定的 Y 轴误差（高度的一半），视为同一行
+      const rowThreshold = Math.min(a.height, b.height) * 0.5;
+      if (Math.abs(a.y - b.y) < rowThreshold) {
+        // 同一行，按 X 排序
+        return a.x - b.x;
+      }
+      // 不同行，按 Y 排序
+      return a.y - b.y;
+    },
+    // 手动排序车位
+    sortSpaces() {
+      if (!this.recognizedSpaces || this.recognizedSpaces.length === 0) return;
+      
+      console.log('排序前:', this.recognizedSpaces.map(s => `${s.number || 'null'}(${Math.round(s.y)})`));
+
+      // 1. 排序数据
+      this.recognizedSpaces.sort(this.compareSpaces);
+      
+      console.log('排序后:', this.recognizedSpaces.map(s => `${s.number || 'null'}(${Math.round(s.y)})`));
+
+      // 2. 更新 Fabric 对象的 parkingIndex 映射
+      if (this.canvas) {
+        const objects = this.canvas.getObjects();
+        this.spaceFabricObjects.clear();
+        
+        this.recognizedSpaces.forEach((space, index) => {
+          // 通过 ID 找到对应的 Fabric 对象
+          const fabricObj = objects.find(obj => obj.id === space.id);
+          if (fabricObj) {
+            fabricObj.parkingIndex = index;
+            this.spaceFabricObjects.set(index, fabricObj);
+          }
+        });
+        
+        // 3. 如果当前有选中的车位，更新选中索引
+        if (this.selectedObject && this.selectedObject.fabricObject) {
+           // 重新查找索引
+           const currentId = this.selectedObject.fabricObject.id;
+           const newIndex = this.recognizedSpaces.findIndex(s => s.id === currentId);
+           if (newIndex !== -1) {
+               this.selectedSpaceIndex = newIndex;
+               this.selectedObject.fabricObject.parkingIndex = newIndex;
+           }
+        }
       }
     },
     createParkingSpace(space, index) {
@@ -296,8 +382,8 @@ export default {
       });
 
       // 添加车位信息
-      // 使用识别结果中的 id，如果没有则生成一个
-      const spaceId = space.id || `parking_${index}_${Date.now()}`;
+      // ID 应该已经存在于 space 对象中
+      const spaceId = space.id; 
       rect.set({
         id: spaceId,
         parkingNumber: space.number || null,
@@ -305,6 +391,7 @@ export default {
         originX: 'left',
         originY: 'top',
       });
+      console.log(`创建车位对象: ID=${spaceId}, Number=${space.number}`);
 
       // 如果有车位号，添加文本标签（作为矩形的一部分，跟随移动）
       let text = null;
@@ -551,6 +638,29 @@ export default {
   padding-bottom: 8px;
   border-bottom: 1px solid #eee;
   flex-shrink: 0; /* 防止表头被压缩 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sort-btn {
+  padding: 4px 8px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.sort-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+  border-color: #ccc;
 }
 
 .list-items {
@@ -561,6 +671,25 @@ export default {
   max-height: none;
   flex: 1;
   overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* 自定义滚动条样式 */
+.list-items::-webkit-scrollbar {
+  width: 6px; /* 滚动条宽度 */
+}
+
+.list-items::-webkit-scrollbar-track {
+  background: transparent; /* 轨道背景 */
+}
+
+.list-items::-webkit-scrollbar-thumb {
+  background-color: #e0e0e0; /* 滑块颜色 */
+  border-radius: 3px; /* 滑块圆角 */
+}
+
+.list-items::-webkit-scrollbar-thumb:hover {
+  background-color: #bdbdbd; /* 悬停时滑块颜色 */
 }
 
 .space-item {
