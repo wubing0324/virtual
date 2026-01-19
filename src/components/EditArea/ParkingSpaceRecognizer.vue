@@ -1620,9 +1620,22 @@ export default {
           
           // Now binarize to separate text (Black) from Background (White)
           // 现在进行二值化，将文字（黑色）与背景（白色）分离
+          // Now binarize to separate text (Black) from Background (White)
+          // 现在进行二值化，将文字（黑色）与背景（白色）分离
           const gray = new cv.Mat();
           cv.cvtColor(finalImg, gray, cv.COLOR_RGBA2GRAY);
-          cv.threshold(gray, gray, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
+          
+          // Use Adaptive Thresholding instead of Otsu
+          // 使用自适应阈值替代 Otsu，这能更好地保留细微的文字细节（如 '1'）
+          // blockSize=21, C=15 (Adjusted for typical parking lot images)
+          cv.adaptiveThreshold(gray, gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 21, 15);
+          
+          // Morphological Erode to thicken the text (Black text on White background)
+          // 形态学腐蚀以加粗文字（白底黑字，腐蚀白色=加粗黑色）
+          // This helps solidifying thin characters like '1' or 'I'
+          const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(2, 2));
+          cv.erode(gray, gray, kernel);
+          kernel.delete();
           
           // Show this cleaned image to Tesseract
           // 将此清理后的图像显示给 Tesseract
@@ -1641,7 +1654,11 @@ export default {
           gray.delete();
 
           // Reuse worker
-          const { data: { text } } = await this.worker.recognize(canvas);
+          // Tesseract config: restricted characters, single block mode
+          const { data: { text } } = await this.worker.recognize(canvas, {
+            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', // Only uppercase and digits
+            tessedit_pageseg_mode: '6', // PSM_SINGLE_BLOCK (Assume a uniform block of text)
+          });
           const cleanedText = text.trim().replace(/\s+/g, '');
           const match = cleanedText.match(/([A-Z]?\d+)/);
           return match ? match[1] : null;
