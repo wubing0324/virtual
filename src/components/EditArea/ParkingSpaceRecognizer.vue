@@ -245,7 +245,7 @@ export default {
 
         // 识别矩形框（车位）
         const minArea = 500; // 降低最小面积阈值，支持更小的车位
-        const maxArea = src.rows * src.cols * 0.05; // 大幅降低最大面积阈值，避免识别到聚集的整体
+        const maxArea = src.rows * src.cols * 0.25; // Increase to 25% to allow for groups of joined spaces
         const maxSingleSpaceArea = 6000; // 单个车位的最大面积（超过此值肯定是多个车位合并）
         
         // Process both sets of contours
@@ -384,8 +384,9 @@ export default {
               continue;
             }
             
-            // 如果无法分割，跳过这个大的轮廓
-            console.log(`跳过无法分割的大轮廓: 面积=${candidate.area}`);
+            // 如果无法分割，保留原始大轮廓（与其丢弃，不如保留一个大的）
+            console.log(`无法分割大轮廓，保留原始轮廓: 面积=${candidate.area}`);
+            finalCandidates.push(candidate);
             continue;
           }
           
@@ -474,12 +475,14 @@ export default {
         cv.bitwise_or(blueMask, greenMask, combinedMask);
 
         // Morphological operations to connect lines
-        const kernelH = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(20, 1));
-        const kernelV = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 20));
+        // Use dilate to connect broken lines (more robust than OPEN for thin lines)
+        const kernelH = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(20, 1)); 
+        const kernelV = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 20)); 
         
         // Detect Horizontal
         const dilatedH = new cv.Mat();
         cv.dilate(combinedMask, dilatedH, kernelH);
+        
         const contoursH = new cv.MatVector();
         const hierarchyH = new cv.Mat();
         cv.findContours(dilatedH, contoursH, hierarchyH, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
@@ -501,6 +504,7 @@ export default {
         // Detect Vertical
         const dilatedV = new cv.Mat();
         cv.dilate(combinedMask, dilatedV, kernelV);
+        
         const contoursV = new cv.MatVector();
         const hierarchyV = new cv.Mat();
         cv.findContours(dilatedV, contoursV, hierarchyV, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
@@ -575,7 +579,8 @@ export default {
             const area = width * largeCandidate.height;
             
             // 检查分割后的面积是否合理
-            if (area <= maxSingleArea && area >= 500 && width > 30) {
+            // Relax validation: allow slightly larger areas (up to 1.5x) to prevent rejecting valid splits
+            if (area <= maxSingleArea * 1.5 && area >= 500 && width > 30) {
               splitSpaces.push({
                 x: x,
                 y: largeCandidate.y,
@@ -621,7 +626,8 @@ export default {
             const area = largeCandidate.width * height;
             
             // 检查分割后的面积是否合理
-            if (area <= maxSingleArea && area >= 500 && height > 30) {
+            // Relax validation: allow slightly larger areas (up to 1.5x)
+            if (area <= maxSingleArea * 1.5 && area >= 500 && height > 30) {
               splitSpaces.push({
                 x: largeCandidate.x,
                 y: y,
@@ -649,8 +655,10 @@ export default {
     splitLargeContourByArea(largeCandidate, maxSingleArea) {
       const splitSpaces = [];
       
-      // 计算需要分割成多少个车位
-      const estimatedCount = Math.ceil(largeCandidate.area / maxSingleArea);
+      // Calculate how many spaces to split into
+      // Use Math.round instead of Math.ceil to avoid over-splitting (e.g., 3.1 spaces -> 4)
+      // Since area > maxSingleArea, we expect at least 2 spaces, so force min 2.
+      const estimatedCount = Math.max(2, Math.round(largeCandidate.area / maxSingleArea));
       
       if (estimatedCount < 2) {
         return splitSpaces;
@@ -667,7 +675,8 @@ export default {
         const spaceArea = spaceWidth * spaceHeight;
         
         // 检查分割后的面积是否合理
-        if (spaceArea <= maxSingleArea && spaceArea >= 500) {
+        // Relax validation
+        if (spaceArea <= maxSingleArea * 1.5 && spaceArea >= 500) {
           for (let i = 0; i < estimatedCount; i++) {
             splitSpaces.push({
               x: largeCandidate.x + i * spaceWidth,
@@ -692,7 +701,8 @@ export default {
         const spaceArea = spaceWidth * spaceHeight;
         
         // 检查分割后的面积是否合理
-        if (spaceArea <= maxSingleArea && spaceArea >= 500) {
+        // Relax validation
+        if (spaceArea <= maxSingleArea * 1.5 && spaceArea >= 500) {
           for (let i = 0; i < estimatedCount; i++) {
             splitSpaces.push({
               x: largeCandidate.x,
