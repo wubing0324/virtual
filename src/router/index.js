@@ -21,6 +21,11 @@ const routes = [
     name: 'ParkingDraw',
     component: () => import('@/components/ParkingDraw/index.vue'),
   },
+  {
+    path: '/parking-dom',
+    name: 'ParkingDom',
+    component: () => import('@/components/ParkingDom/index.vue'),
+  },
 ];
 
 const router = new VueRouter({

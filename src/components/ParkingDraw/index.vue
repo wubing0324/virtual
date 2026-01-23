@@ -28,8 +28,9 @@
 </template>
 
 <script>
-import { Canvas, loadSVGFromURL, util } from 'fabric';
-import parkingSvgUrl from '@/assets/const/车位.svg';
+import { Canvas, loadSVGFromURL, util, Image as FabricImage } from 'fabric';
+import parkingSvgUrl from '@/assets/const/aaaa.svg';
+import carBgUrl from '@/assets/images/car-bg.png';
 
 export default {
   name: 'ParkingDraw',
@@ -61,7 +62,7 @@ export default {
       });
     },
 
-    initCanvas() {
+    async initCanvas() {
       const wrapper = this.$refs.canvasWrapper;
       if (!wrapper) return;
 
@@ -72,66 +73,116 @@ export default {
         width,
         height,
         backgroundColor: '#f8f9fa',
-        selection: true,
+        selection: false, // 禁用框选，因为我们只看图
       });
+      
+      try {
+        // 并行加载背景图和SVG
+        const [bgImage, parkingGroup] = await Promise.all([
+          this.loadBackgroundImage(),
+          this.loadSVG()
+        ]);
 
-      // 加载 SVG
-      this.loadSVG();
+        if (bgImage) {
+          bgImage.set({
+            left: 0,
+            top: 0,
+            originX: 'left',
+            originY: 'top',
+            selectable: false,
+            evented: false,
+          });
+          this.canvas.add(bgImage);
+        }
+
+        if (parkingGroup) {
+          parkingGroup.set({
+            left: 0,
+            top: 0,
+            originX: 'left',
+            originY: 'top',
+            selectable: false,
+            evented: false,
+          });
+          this.canvas.add(parkingGroup);
+        }
+
+        // 调整视图以适应内容（以背景图为准，如果没有则以SVG为准）
+        const targetObj = bgImage || parkingGroup;
+        if (targetObj) {
+          this.fitContentToScreen(targetObj);
+        }
+      } catch (e) {
+        console.error('Initialization error:', e);
+      }
 
       // 绑定缩放平移事件
       this.bindEvents();
     },
 
-    async loadSVG() {
-      // 显示加载提示
-      console.log('Loading SVG from:', parkingSvgUrl);
-      
-      try {
-        const { objects, options } = await loadSVGFromURL(parkingSvgUrl);
-        
-        if (objects && objects.length > 0) {
-            // 使用 groupSVGElements 组合所有路径
-            const parkingGroup = util.groupSVGElements(objects, options);
-            
-            // 调整初始位置和缩放以适应屏幕
-            this.fitToScreen(parkingGroup);
-    
-            this.canvas.add(parkingGroup);
-            this.canvas.requestRenderAll();
-            console.log('SVG loaded successfully');
-        } else {
-            console.error('No objects found in SVG');
-        }
-      } catch (error) {
-          console.error('Error loading SVG:', error);
-      }
-    },
-
-    fitToScreen(object) {
+    fitContentToScreen(object) {
+      if (!object) return;
       const canvasWidth = this.canvas.width;
       const canvasHeight = this.canvas.height;
       const objectWidth = object.width;
       const objectHeight = object.height;
 
       // 计算适合的缩放比例
-      const scaleX = (canvasWidth * 0.9) / objectWidth;
-      const scaleY = (canvasHeight * 0.9) / objectHeight;
+      const scaleX = (canvasWidth * 0.95) / objectWidth;
+      const scaleY = (canvasHeight * 0.95) / objectHeight;
       const scale = Math.min(scaleX, scaleY);
 
-      object.set({
-        scaleX: scale,
-        scaleY: scale,
-        left: canvasWidth / 2,
-        top: canvasHeight / 2,
-        originX: 'center',
-        originY: 'center',
-      });
+      // 计算居中偏移
+      const panX = (canvasWidth - objectWidth * scale) / 2;
+      const panY = (canvasHeight - objectHeight * scale) / 2;
+
+      // 设置视口变换：[scaleX, skewX, skewY, scaleY, translateX, translateY]
+      this.canvas.setViewportTransform([scale, 0, 0, scale, panX, panY]);
       
-      this.zoom = this.canvas.getZoom(); // Initial zoom is usually 1, but object scale is what we changed.
-      // Actually we changed object scale, not canvas zoom. 
-      // strict zoom logic: reset object scale to 1, set canvas zoom. 
-      // For simplicity, let's just keep object scaled.
+      this.zoom = scale;
+      this.canvas.requestRenderAll();
     },
+
+    async loadBackgroundImage() {
+      console.log('Loading background image from:', carBgUrl);
+      try {
+        const img = new Image();
+        img.src = carBgUrl;
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+
+        const fabricImage = new FabricImage(img, {
+          opacity: 1, 
+        });
+        
+        console.log('Background image loaded');
+        return fabricImage;
+      } catch (error) {
+        console.error('Error loading background image:', error);
+        return null;
+      }
+    },
+
+    async loadSVG() {
+      console.log('Loading SVG from:', parkingSvgUrl);
+      try {
+        const { objects, options } = await loadSVGFromURL(parkingSvgUrl);
+        
+        if (objects && objects.length > 0) {
+            const parkingGroup = util.groupSVGElements(objects, options);
+            console.log('SVG loaded successfully');
+            return parkingGroup;
+        }
+        return null;
+      } catch (error) {
+          console.error('Error loading SVG:', error);
+          return null;
+      }
+    },
+
+
 
     bindEvents() {
       // 鼠标滚轮缩放
