@@ -28,8 +28,8 @@ export default {
         { type: 'rect', name: '矩形', icon: '▭' },
         { type: 'circle', name: '圆形', icon: '○' },
         { type: 'triangle', name: '三角形', icon: '△' },
-        { type: 'line', name: '直线', icon: '─' },
-        { type: 'text', name: '文本', icon: 'T' },
+        // { type: 'line', name: '直线', icon: '─' },
+        // { type: 'text', name: '文本', icon: 'T' },
       ],
     };
   },

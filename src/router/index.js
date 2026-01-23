@@ -16,6 +16,11 @@ const routes = [
     name: 'EditArea',
     component: EditArea,
   },
+  {
+    path: '/parking-draw',
+    name: 'ParkingDraw',
+    component: () => import('@/components/ParkingDraw/index.vue'),
+  },
 ];
 
 const router = new VueRouter({

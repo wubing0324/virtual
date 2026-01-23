@@ -1,5 +1,24 @@
 <template>
   <div class="parking-recognizer">
+    <div class="config-panel">
+      <div class="config-group">
+        <label>最小尺寸 (宽x高):</label>
+        <div class="input-row">
+          <input type="number" v-model.number="config.minWidth" placeholder="宽" class="size-input" />
+          <span class="separator">x</span>
+          <input type="number" v-model.number="config.minHeight" placeholder="高" class="size-input" />
+        </div>
+      </div>
+      <div class="config-group">
+        <label>最大尺寸 (宽x高):</label>
+        <div class="input-row">
+          <input type="number" v-model.number="config.maxWidth" placeholder="宽" class="size-input" />
+          <span class="separator">x</span>
+          <input type="number" v-model.number="config.maxHeight" placeholder="高" class="size-input" />
+        </div>
+      </div>
+    </div>
+    
     <button @click="startRecognition" :disabled="isProcessing" class="recognize-btn">
       {{ isProcessing ? '识别中...' : '开始识别车位' }}
     </button>
@@ -23,6 +42,12 @@ export default {
       parkingSpaces: [],
       opencvLoaded: false,
       worker: null,
+      config: {
+        minWidth: 20,
+        minHeight: 40,
+        maxWidth: 100,
+        maxHeight: 200,
+      },
     };
   },
   beforeDestroy() {
@@ -269,9 +294,21 @@ export default {
         colorHierarchy.delete();
 
         // 识别矩形框（车位）
-        const minArea = 500; // 降低最小面积阈值，支持更小的车位
+        let minArea = 500; 
+        let maxSingleSpaceArea = 6000; 
+        let minDimThreshold = 25;
+
+        // Apply config if available
+        if (this.config.minWidth && this.config.minHeight) {
+            minArea = this.config.minWidth * this.config.minHeight;
+            minDimThreshold = Math.min(this.config.minWidth, this.config.minHeight);
+        }
+        if (this.config.maxWidth && this.config.maxHeight) {
+            maxSingleSpaceArea = this.config.maxWidth * this.config.maxHeight;
+        }
+
         const maxArea = src.rows * src.cols * 0.25; // Increase to 25% to allow for groups of joined spaces
-        const maxSingleSpaceArea = 6000; // 单个车位的最大面积（超过此值肯定是多个车位合并）
+
         
         // Process both sets of contours
         // 处理两组轮廓
@@ -295,7 +332,7 @@ export default {
             // 过滤太小的区域（基于宽高）
             const minDim = Math.min(rect.width, rect.height);
             const maxDim = Math.max(rect.width, rect.height);
-            if (minDim < 25 || maxDim < 40) { // Slightly relaxed
+            if (minDim < minDimThreshold || maxDim < 40) { // Slightly relaxed
               continue;
             }
 
@@ -318,13 +355,22 @@ export default {
                   const rotatedRect = cv.minAreaRect(cnt);
                   let angle = Math.round(rotatedRect.angle);
                   // Keep raw values for accurate splitting later
-                  // 保留原始值以便后续精确分割
                   const rawAngle = rotatedRect.angle;
-                  const rotatedWidth = rotatedRect.size.width;
-                  const rotatedHeight = rotatedRect.size.height;
+                  const rawWidth = rotatedRect.size.width;
+                  const rawHeight = rotatedRect.size.height;
+                  
+                  let rotatedWidth = rawWidth;
+                  let rotatedHeight = rawHeight;
 
-                  if (angle < -45) angle += 90;
-                  if (angle > 45) angle -= 90;
+                  if (angle < -45) {
+                    angle += 90;
+                    // Swap dimensions because we rotated 90 degrees
+                    [rotatedWidth, rotatedHeight] = [rotatedHeight, rotatedWidth];
+                  } else if (angle > 45) {
+                    angle -= 90;
+                    // Swap dimensions because we rotated -90 degrees
+                    [rotatedWidth, rotatedHeight] = [rotatedHeight, rotatedWidth];
+                  }
                   
                   const hull = new cv.Mat();
                   cv.convexHull(approx, hull);
@@ -341,6 +387,8 @@ export default {
                       rawAngle: rawAngle,
                       rotatedWidth: rotatedWidth,
                       rotatedHeight: rotatedHeight,
+                      rawWidth: rawWidth,
+                      rawHeight: rawHeight,
                       number: null,
                       area: area,
                       centerX: rect.x + rect.width / 2,
@@ -474,7 +522,7 @@ export default {
             
             // ... Separating Lines check ...
             // ... 分割线检查 ...
-            const splitSpaces = this.splitLargeContourBySeparatingLines(candidate, separatingLines, maxSingleSpaceArea);
+            const splitSpaces = this.splitLargeContourBySeparatingLines(candidate, separatingLines, maxSingleSpaceArea, standardArea, standardRatio);
             if (splitSpaces.length > 1) {
               processingQueue.push(...splitSpaces);
               continue;
@@ -497,7 +545,7 @@ export default {
 
         // 去重：使用非极大值抑制（NMS）去除重叠的检测框
         // 使用更低的阈值，避免过度合并相邻车位
-        const spaces = this.nonMaxSuppression(finalCandidates, 0.15);
+        let spaces = this.nonMaxSuppression(finalCandidates, 0.15);
 
         // 对识别到的车位进行 OCR 识别（批量处理，提高效率）
         console.log(`找到 ${spaces.length} 个候选车位，开始 OCR 识别...`);
@@ -515,6 +563,26 @@ export default {
           } catch (e) {
             console.warn(`OCR 识别失败 (${i + 1}/${spaces.length}):`, e);
           }
+        }
+
+        // Final strict filtering based on dimensions directly (if config exists)
+        // 最后的严格过滤（如果配置存在）
+        if (this.config.minWidth && this.config.minHeight) {
+             const minW = Math.min(this.config.minWidth, this.config.minHeight);
+             
+             spaces = spaces.filter(s => {
+                 // Check rotated dims if available
+                 const w = s.rotatedWidth || s.width;
+                 const h = s.rotatedHeight || s.height;
+                 const short = Math.min(w, h);
+                 // Allow some tolerance (e.g. 10%)
+                 return short >= minW * 0.8 && s.area >= minArea * 0.8; 
+             });
+        }
+        
+        if (this.config.maxWidth && this.config.maxHeight) {
+             const maxAreaLimit = this.config.maxWidth * this.config.maxHeight;
+             spaces = spaces.filter(s => s.area <= maxAreaLimit * 1.2);
         }
 
         this.parkingSpaces = spaces;
@@ -653,7 +721,7 @@ export default {
     },
     // Split large contours by separating lines
     // 通过分割线分割大轮廓
-    splitLargeContourBySeparatingLines(largeCandidate, lines, maxSingleArea) {
+    splitLargeContourBySeparatingLines(largeCandidate, lines, maxSingleArea, standardArea, standardRatio) {
       const splitSpaces = [];
       
       // 判断是横向排列还是纵向排列
@@ -669,31 +737,44 @@ export default {
         });
         
         if (relevantLines.length > 0) {
-          // 按X坐标排序
+          // Sort by X
           relevantLines.sort((a, b) => a.x - b.x);
           
-          // 计算分割点（线条的X坐标）
+          // Calculate split points
           const splitPoints = [largeCandidate.x, ...relevantLines.map(line => line.x), largeCandidate.x + largeCandidate.width];
           
-          // 去重和排序
+          // Unique and sort
           const uniquePoints = [...new Set(splitPoints)].sort((a, b) => a - b);
           
-          // 分割成多个车位
+          // Split into spaces
           for (let i = 0; i < uniquePoints.length - 1; i++) {
             const x = uniquePoints[i];
             const width = uniquePoints[i + 1] - x;
             const area = width * largeCandidate.height;
             
-            // 检查分割后的面积是否合理
-            // Relax validation: allow slightly larger areas (up to 1.5x) to prevent rejecting valid splits
-            // 放宽验证：允许稍大的面积（最高 1.5 倍）以防止拒绝有效分割
+            // Relax validation
             if (area <= maxSingleArea * 1.5 && area >= 500 && width > 30) {
+                 // Calculate rotated dimensions for the new space
+              let rotW = largeCandidate.rotatedWidth;
+              let rotH = largeCandidate.rotatedHeight;
+              
+              if (standardArea && standardRatio) {
+                  const ratio = standardRatio;
+                  const estimatedH = Math.sqrt(standardArea / ratio);
+                  const estimatedW = estimatedH * ratio;
+                  rotW = estimatedW;
+                  rotH = estimatedH;
+              }
+
               splitSpaces.push({
                 x: x,
                 y: largeCandidate.y,
                 width: width,
                 height: largeCandidate.height,
                 angle: largeCandidate.angle,
+                rawAngle: largeCandidate.rawAngle,
+                rotatedWidth: rotW, // Use estimated
+                rotatedHeight: rotH, 
                 number: null,
                 area: area,
                 centerX: x + width / 2,
@@ -718,30 +799,62 @@ export default {
         });
         
         if (relevantLines.length > 0) {
-          // 按Y坐标排序
+          // Sort by Y
           relevantLines.sort((a, b) => a.y - b.y);
           
-          // 计算分割点（线条的Y坐标）
+          // Calculate split points
           const splitPoints = [largeCandidate.y, ...relevantLines.map(line => line.y), largeCandidate.y + largeCandidate.height];
           
-          // 去重和排序
+          // Deduplicate and sort
           const uniquePoints = [...new Set(splitPoints)].sort((a, b) => a - b);
           
-          // 分割成多个车位
+          // Split into spaces
           for (let i = 0; i < uniquePoints.length - 1; i++) {
             const y = uniquePoints[i];
             const height = uniquePoints[i + 1] - y;
             const area = largeCandidate.width * height;
             
-            // 检查分割后的面积是否合理
-            // Relax validation: allow slightly larger areas (up to 1.5x)
+            // Check if area is reasonable
+            // Relax validation: allow slightly larger areas
             if (area <= maxSingleArea * 1.5 && area >= 500 && height > 30) {
+              
+              // Calculate rotated dimensions for the new space
+              let rotW = largeCandidate.rotatedWidth;
+              let rotH = largeCandidate.rotatedHeight;
+              
+              // If we have standard metrics, try to normalize dimensions
+              if (standardArea && standardRatio) {
+                  // Assuming the row depth is preserved from the large candidate
+                  // logic: Row is vertical (splitted by horizontal lines)
+                  // So AABB width is roughly the row depth * sin/cos factors?
+                  // Actually, for vertical stack of inclined spaces:
+                  // The "Depth" of the stack corresponds to the "height" of the inclined space? No.
+                  
+                  // Let's use simple logic: If standardRatio < 1 (Tall spaces),
+                  // then W < H.
+                  const ratio = standardRatio;
+                  const estimatedH = Math.sqrt(standardArea / ratio);
+                  const estimatedW = estimatedH * ratio;
+                  
+                  rotW = estimatedW;
+                  rotH = estimatedH;
+                  
+                  // Adjust orientation based on largeCandidate if needed?
+                  // largeCandidate.angle is preserved.
+                  // We just need to know if W or H corresponds to the "width" of the stack.
+                  // But standardRatio already captures the dominant shape (Tall vs Wide).
+                  // So we just use estimatedW/H.
+              }
+
               splitSpaces.push({
                 x: largeCandidate.x,
                 y: y,
                 width: largeCandidate.width,
                 height: height,
                 angle: largeCandidate.angle,
+                rawAngle: largeCandidate.rawAngle,
+                rotatedWidth: rotW, // Use estimated rotated dimensions
+                rotatedHeight: rotH,
                 number: null,
                 area: area,
                 centerX: largeCandidate.x + largeCandidate.width / 2,
@@ -775,7 +888,7 @@ export default {
       
       // Determine the geometry using rotated dimensions
       // 使用旋转尺寸确定几何形状
-      const { rotatedWidth, rotatedHeight, rawAngle, centerX, centerY, angle } = candidate;
+      const { rotatedWidth, rotatedHeight, centerX, centerY, angle } = candidate;
       
       // Determine split axis based on which split produces roughly consistent Aspect Ratio
       // 根据哪种分割产生大致一致的长宽比来确定分割轴
@@ -831,7 +944,7 @@ export default {
       // If splitting along Height, use rawAngle + 90.
       // 如果沿高度分割，使用 rawAngle + 90。
       
-      let splitAngle = rawAngle;
+      let splitAngle = angle;
       if (!isWidthLonger) {
         splitAngle += 90;
       }
@@ -914,7 +1027,7 @@ export default {
       try {
         // 1. Deskew the ROI
         // 1. 校正感兴趣区域 (Deskew)
-        const { rotatedWidth, rotatedHeight, rawAngle, centerX, centerY } = candidate;
+        const { rotatedWidth, rotatedHeight, rawAngle, centerX, centerY, rawWidth, rawHeight } = candidate;
         
         // Decide standard or target number of spaces to look for
         // 决定寻找的标准或目标车位数量
@@ -928,8 +1041,8 @@ export default {
         const M = cv.getRotationMatrix2D(center, rawAngle, 1.0);
          // Adjust translation
          // 调整平移
-        const width = rotatedWidth;
-        const height = rotatedHeight;
+        const width = rawWidth || rotatedWidth;
+        const height = rawHeight || rotatedHeight;
         M.data64F[2] += (width / 2.0) - center.x;
         M.data64F[5] += (height / 2.0) - center.y;
         
@@ -1709,7 +1822,51 @@ export default {
 
 <style scoped>
 .parking-recognizer {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
   padding: 10px;
+}
+
+.config-panel {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.config-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.config-group label {
+  font-size: 12px;
+  color: #666;
+  font-weight: bold;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.size-input {
+  width: 60px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.separator {
+  color: #999;
+  font-size: 12px;
 }
 
 .recognize-btn {

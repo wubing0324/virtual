@@ -366,12 +366,38 @@ export default {
 
       const { Rect, Text } = require('fabric');
       
+      // Determine dimensions and position
+      // Prefer rotated dimensions if available and angle is present
+      // 优先使用旋转后的尺寸（如果有）和角度
+      let width = space.width;
+      let height = space.height;
+      let left = space.x;
+      let top = space.y;
+      let originX = 'left';
+      let originY = 'top';
+      
+      if (space.angle && (space.rotatedWidth || space.rotatedHeight)) {
+          // If we have rotated dimensions, use them
+          // 如果有旋转尺寸，使用它们
+          width = space.rotatedWidth || space.width;
+          height = space.rotatedHeight || space.height;
+          
+          // If using rotated dimensions, we MUST positions by center to be accurate
+          // 如果使用旋转尺寸，必须按中心定位才准确
+          if (space.centerX !== undefined && space.centerY !== undefined) {
+             left = space.centerX;
+             top = space.centerY;
+             originX = 'center';
+             originY = 'center';
+          }
+      }
+
       // 创建车位矩形
       const rect = new Rect({
-        left: space.x,
-        top: space.y,
-        width: space.width,
-        height: space.height,
+        left: left,
+        top: top,
+        width: width,
+        height: height,
         angle: space.angle || 0,
         fill: 'rgba(0, 255, 0, 0.2)', // 半透明绿色
         stroke: '#00ff00',
@@ -396,8 +422,8 @@ export default {
         id: spaceId,
         parkingNumber: space.number || null,
         parkingIndex: index, // 保存索引，用于定位
-        originX: 'left',
-        originY: 'top',
+        originX: originX,
+        originY: originY,
       });
       console.log(`创建车位对象: ID=${spaceId}, Number=${space.number}`);
 
