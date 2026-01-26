@@ -5,26 +5,54 @@ import EditArea from '@/components/EditArea/index.vue';
 
 Vue.use(VueRouter);
 
-const routes = [
+export const routes = [
   {
     path: '/',
     name: 'ImageUpload',
     component: ImageUpload,
+    meta: {
+      title: '上传图片',
+    },
   },
   {
     path: '/edit',
     name: 'EditArea',
     component: EditArea,
+    meta: {
+      title: '编辑区域',
+    },
   },
   {
     path: '/parking-draw',
     name: 'ParkingDraw',
     component: () => import('@/components/ParkingDraw/index.vue'),
+    meta: {
+      title: 'svg绘制',
+    },
   },
   {
     path: '/parking-dom',
     name: 'ParkingDom',
     component: () => import('@/components/ParkingDom/index.vue'),
+    meta: {
+      title: 'dom绘制',
+    },
+  },
+  {
+    path: '/parking-json',
+    name: 'ParkingJson',
+    component: () => import('@/components/ParkingJson/index.vue'),
+    meta: {
+      title: 'json绘制',
+    },
+  },
+  {
+    path: '/parking-json-2',
+    name: 'ParkingJson2',
+    component: () => import('@/components/ParkingJson2/index.vue'),
+    meta: {
+      title: 'json2绘制',
+    },
   },
 ];
 

@@ -1,16 +1,16 @@
 <template>
   <div class="parking-draw-page">
-    <div class="header">
+    <!-- <div class="header">
       <div class="title-section">
         <h1 class="title">车位信息绘制</h1>
         <p class="subtitle">基于 CAD 导出的 SVG 数据渲染</p>
       </div>
       <div class="actions">
-        <button class="btn-back" @click="$router.push('/')">
-          返回首页
+        <button class="btn-back" v-for="route in routes" :key="route.path" @click="$router.push(route.path)">
+          {{ route.meta.title }}
         </button>
       </div>
-    </div>
+    </div> -->
 
     <div class="canvas-wrapper" ref="canvasWrapper">
       <canvas ref="canvas"></canvas>
@@ -30,7 +30,9 @@
 <script>
 import { Canvas, loadSVGFromURL, util, Image as FabricImage } from 'fabric';
 import parkingSvgUrl from '@/assets/const/aaaa.svg';
+// import parkingSvgUrl from '@/assets/const/车位.svg';
 import carBgUrl from '@/assets/images/car-bg.png';
+import { routes } from '@/router';
 
 export default {
   name: 'ParkingDraw',
@@ -41,6 +43,7 @@ export default {
       isDragging: false,
       lastPosX: 0,
       lastPosY: 0,
+      routes
     };
   },
   mounted() {
@@ -73,79 +76,23 @@ export default {
         width,
         height,
         backgroundColor: '#f8f9fa',
-        selection: false, // 禁用框选，因为我们只看图
+        selection: true,
       });
-      
-      try {
-        // 并行加载背景图和SVG
-        const [bgImage, parkingGroup] = await Promise.all([
-          this.loadBackgroundImage(),
-          this.loadSVG()
-        ]);
 
-        if (bgImage) {
-          bgImage.set({
-            left: 0,
-            top: 0,
-            originX: 'left',
-            originY: 'top',
-            selectable: false,
-            evented: false,
-          });
-          this.canvas.add(bgImage);
-        }
-
-        if (parkingGroup) {
-          parkingGroup.set({
-            left: 0,
-            top: 0,
-            originX: 'left',
-            originY: 'top',
-            selectable: false,
-            evented: false,
-          });
-          this.canvas.add(parkingGroup);
-        }
-
-        // 调整视图以适应内容（以背景图为准，如果没有则以SVG为准）
-        const targetObj = bgImage || parkingGroup;
-        if (targetObj) {
-          this.fitContentToScreen(targetObj);
-        }
-      } catch (e) {
-        console.error('Initialization error:', e);
-      }
+      // 并行加载背景图和SVG
+      await Promise.all([
+        this.loadBackgroundImage(),
+        this.loadSVG()
+      ]);
 
       // 绑定缩放平移事件
       this.bindEvents();
     },
 
-    fitContentToScreen(object) {
-      if (!object) return;
-      const canvasWidth = this.canvas.width;
-      const canvasHeight = this.canvas.height;
-      const objectWidth = object.width;
-      const objectHeight = object.height;
-
-      // 计算适合的缩放比例
-      const scaleX = (canvasWidth * 0.95) / objectWidth;
-      const scaleY = (canvasHeight * 0.95) / objectHeight;
-      const scale = Math.min(scaleX, scaleY);
-
-      // 计算居中偏移
-      const panX = (canvasWidth - objectWidth * scale) / 2;
-      const panY = (canvasHeight - objectHeight * scale) / 2;
-
-      // 设置视口变换：[scaleX, skewX, skewY, scaleY, translateX, translateY]
-      this.canvas.setViewportTransform([scale, 0, 0, scale, panX, panY]);
-      
-      this.zoom = scale;
-      this.canvas.requestRenderAll();
-    },
-
     async loadBackgroundImage() {
       console.log('Loading background image from:', carBgUrl);
       try {
+        // 使用 HTML Image 对象加载，确保跨域和兼容性
         const img = new Image();
         img.src = carBgUrl;
         await new Promise((resolve, reject) => {
@@ -154,35 +101,71 @@ export default {
         });
 
         const fabricImage = new FabricImage(img, {
-          opacity: 1, 
+          left: 0,
+          top: 0,
+          opacity: 0.8, // 稍微透明，方便对比
+          selectable: true, // 允许用户拖动调整
+          evented: true,
         });
-        
+
+        this.canvas.add(fabricImage);
+        this.canvas.sendToBack(fabricImage);
         console.log('Background image loaded');
-        return fabricImage;
       } catch (error) {
         console.error('Error loading background image:', error);
-        return null;
       }
     },
 
     async loadSVG() {
+      // 显示加载提示
       console.log('Loading SVG from:', parkingSvgUrl);
+      
       try {
         const { objects, options } = await loadSVGFromURL(parkingSvgUrl);
         
         if (objects && objects.length > 0) {
+            // 使用 groupSVGElements 组合所有路径
             const parkingGroup = util.groupSVGElements(objects, options);
+            
+            // 调整初始位置和缩放以适应屏幕
+            this.fitToScreen(parkingGroup);
+    
+            this.canvas.add(parkingGroup);
+            this.canvas.requestRenderAll();
             console.log('SVG loaded successfully');
-            return parkingGroup;
+        } else {
+            console.error('No objects found in SVG');
         }
-        return null;
       } catch (error) {
           console.error('Error loading SVG:', error);
-          return null;
       }
     },
 
+    fitToScreen(object) {
+      const canvasWidth = this.canvas.width;
+      const canvasHeight = this.canvas.height;
+      const objectWidth = object.width;
+      const objectHeight = object.height;
 
+      // 计算适合的缩放比例
+      const scaleX = (canvasWidth * 0.9) / objectWidth;
+      const scaleY = (canvasHeight * 0.9) / objectHeight;
+      const scale = Math.min(scaleX, scaleY);
+
+      object.set({
+        scaleX: scale,
+        scaleY: scale,
+        left: canvasWidth / 2,
+        top: canvasHeight / 2,
+        originX: 'center',
+        originY: 'center',
+      });
+      
+      this.zoom = this.canvas.getZoom(); // Initial zoom is usually 1, but object scale is what we changed.
+      // Actually we changed object scale, not canvas zoom. 
+      // strict zoom logic: reset object scale to 1, set canvas zoom. 
+      // For simplicity, let's just keep object scaled.
+    },
 
     bindEvents() {
       // 鼠标滚轮缩放
@@ -241,7 +224,7 @@ export default {
 .parking-draw-page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 94vh;
   background-color: #ffffff;
 }
 
