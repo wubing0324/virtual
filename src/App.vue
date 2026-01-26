@@ -1,10 +1,10 @@
 <template>
   <div id="app">
-    <div class="actions">
+    <!-- <div class="actions">
       <button class="btn-back" v-for="route in routes" :key="route.path" @click="$router.push(route.path)">
         {{ route.meta.title }}
       </button>
-    </div>
+    </div> -->
     <router-view />
   </div>
 </template>

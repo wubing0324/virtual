@@ -230,17 +230,42 @@ export default {
         const edges = new cv.Mat();
         cv.Canny(blurred, edges, 30, 100); // Lower thresholds for better sensitivity
 
-        // Dilate edges to close gaps (crucial for dashed lines or incomplete boundaries)
-        // 膨胀边缘以闭合间隙（对于虚线或不完整的边界至关重要）
+        // Dilate edges to close gaps
+        // 膨胀边缘以闭合间隙
+        // Use simpler kernel or directional if we suspect systematic gaps
         const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+        
+        // 1. Standard Dilation
         const dilatedEdges = new cv.Mat();
         cv.dilate(edges, dilatedEdges, kernel);
+        
+        // 2. Directional Dilation (Edge Connection)
+        // 2. 方向性膨胀（边缘连接）
+        // Connect horizontal gaps aggressively
+        const kernelConnectH = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(15, 1));
+        const dilatedEdgesH = new cv.Mat();
+        cv.dilate(edges, dilatedEdgesH, kernelConnectH);
+        
+        // Connect vertical gaps aggressively
+        const kernelConnectV = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 15));
+        const dilatedEdgesV = new cv.Mat();
+        cv.dilate(edges, dilatedEdgesV, kernelConnectV);
 
-        // Find contours from edges
-        // 从边缘查找轮廓
+        // Find contours from edges (Standard)
+        // 从边缘查找轮廓（标准）
         const edgeContours = new cv.MatVector();
         const hierarchy = new cv.Mat();
         cv.findContours(dilatedEdges, edgeContours, hierarchy, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
+        
+        // Find contours (Horizontal Optimized)
+        const edgeContoursH = new cv.MatVector();
+        const hierarchyH = new cv.Mat();
+        cv.findContours(dilatedEdgesH, edgeContoursH, hierarchyH, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
+        
+        // Find contours (Vertical Optimized)
+        const edgeContoursV = new cv.MatVector();
+        const hierarchyV = new cv.Mat();
+        cv.findContours(dilatedEdgesV, edgeContoursV, hierarchyV, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
 
         // Pipeline 2: Color Detection (robust for colored regions like green/blue fills)
         // 流程 2：颜色检测（对于绿色/蓝色填充区域更稳健）
@@ -274,24 +299,51 @@ export default {
         const morphKernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5));
         cv.morphologyEx(colorMask, colorMask, cv.MORPH_CLOSE, morphKernel);
 
-        // Find contours from color mask
+        // 🆕 Directional Separation (Morph Open to cut bridges)
+        // 🆕 方向性分离（通过开运算切断连接桥）
+        const kernelSepH = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(20, 1)); // Keep Horizontal features
+        const maskSepH = new cv.Mat();
+        cv.morphologyEx(colorMask, maskSepH, cv.MORPH_OPEN, kernelSepH);
+        
+        const kernelSepV = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 20)); // Keep Vertical features
+        const maskSepV = new cv.Mat();
+        cv.morphologyEx(colorMask, maskSepV, cv.MORPH_OPEN, kernelSepV);
+
+        // Find contours from color mask (Standard)
         // 从颜色掩码查找轮廓
         const colorContours = new cv.MatVector();
         const colorHierarchy = new cv.Mat(); // Separate hierarchy
         cv.findContours(colorMask, colorContours, colorHierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+        
+        // Find contours (Horizontal Separated)
+        const colorContoursH = new cv.MatVector();
+        const colorHierarchyH = new cv.Mat();
+        cv.findContours(maskSepH, colorContoursH, colorHierarchyH, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+        
+        // Find contours (Vertical Separated)
+        const colorContoursV = new cv.MatVector();
+        const colorHierarchyV = new cv.Mat();
+        cv.findContours(maskSepV, colorContoursV, colorHierarchyV, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
         // Clean up temp resources
         // 清理临时资源
         blurred.delete();
         edges.delete();
         kernel.delete();
-        dilatedEdges.delete();
+        
+        kernelConnectH.delete(); kernelConnectV.delete();
+        dilatedEdges.delete(); dilatedEdgesH.delete(); dilatedEdgesV.delete();
+        
         hsv.delete();
         lowerGreen.delete(); upperGreen.delete(); greenMask.delete();
         lowerBlue.delete(); upperBlue.delete(); blueMask.delete();
         colorMask.delete();
         morphKernel.delete();
-        colorHierarchy.delete();
+        
+        kernelSepH.delete(); kernelSepV.delete();
+        maskSepH.delete(); maskSepV.delete();
+        
+        colorHierarchy.delete(); colorHierarchyH.delete(); colorHierarchyV.delete();
 
         // 识别矩形框（车位）
         let minArea = 500; 
@@ -310,10 +362,13 @@ export default {
         const maxArea = src.rows * src.cols * 0.25; // Increase to 25% to allow for groups of joined spaces
 
         
-        // Process both sets of contours
-        // 处理两组轮廓
+        // Process all sets of contours
+        // 处理所有轮廓集合
         const candidates = [];
-        const contourSets = [edgeContours, colorContours];
+        const contourSets = [
+             edgeContours, edgeContoursH, edgeContoursV, 
+             colorContours, colorContoursH, colorContoursV
+        ];
 
         for (const contours of contourSets) {
           for (let i = 0; i < contours.size(); i++) {
@@ -351,24 +406,51 @@ export default {
 
             // Accept 4-8 vertices (roughly rectangular)
             // 接受 4-8 个顶点（大致为矩形）
-            if (approx.rows >= 4 && approx.rows <= 8) { // Allow slightly more complex shapes
+            if (approx.rows >= 4 && approx.rows <= 8) { 
                   const rotatedRect = cv.minAreaRect(cnt);
+                  
+                  // 🆕 Get 4 corners (vertices) using boxPoints
+                  // 使用 boxPoints 获取 4 个顶点
+                  let vertices = [];
+                  try {
+                    const pointsMat = new cv.Mat();
+                    cv.boxPoints(rotatedRect, pointsMat);
+                    for (let j = 0; j < 4; j++) {
+                        vertices.push({
+                            x: pointsMat.floatAt(j, 0),
+                            y: pointsMat.floatAt(j, 1)
+                        });
+                    }
+                    pointsMat.delete();
+                  } catch (e) {
+                      // Fallback if boxPoints fails
+                      vertices = [
+                          {x: rect.x, y: rect.y},
+                          {x: rect.x + rect.width, y: rect.y},
+                          {x: rect.x + rect.width, y: rect.y + rect.height},
+                          {x: rect.x, y: rect.y + rect.height}
+                      ];
+                  }
+
                   let angle = Math.round(rotatedRect.angle);
-                  // Keep raw values for accurate splitting later
+                  // Keep raw values 
                   const rawAngle = rotatedRect.angle;
                   const rawWidth = rotatedRect.size.width;
                   const rawHeight = rotatedRect.size.height;
                   
                   let rotatedWidth = rawWidth;
                   let rotatedHeight = rawHeight;
-
+                  
+                  // Normalize angle to -45 to 45 degree roughly for "upright" check
+                  // Standardize based on logic: Width is the "longer" or "horizontal-ish" side?
+                  // No, minAreaRect is generic.
+                  // We just need consistency.
+                  
                   if (angle < -45) {
                     angle += 90;
-                    // Swap dimensions because we rotated 90 degrees
                     [rotatedWidth, rotatedHeight] = [rotatedHeight, rotatedWidth];
                   } else if (angle > 45) {
                     angle -= 90;
-                    // Swap dimensions because we rotated -90 degrees
                     [rotatedWidth, rotatedHeight] = [rotatedHeight, rotatedWidth];
                   }
                   
@@ -379,7 +461,7 @@ export default {
                   
                   if (extent > 0.60) { // 放宽占比限制
                     candidates.push({
-                      x: rect.x,
+                      x: rect.x, // Keep AABB for compatibility
                       y: rect.y,
                       width: rect.width,
                       height: rect.height,
@@ -389,11 +471,12 @@ export default {
                       rotatedHeight: rotatedHeight,
                       rawWidth: rawWidth,
                       rawHeight: rawHeight,
+                      vertices: vertices, // 🆕 Store proper vertices
                       number: null,
                       area: area,
-                      centerX: rect.x + rect.width / 2,
-                      centerY: rect.y + rect.height / 2,
-                      id: Math.random().toString(36).substr(2, 9), // Unique ID
+                      centerX: rotatedRect.center.x, // Use precise center
+                      centerY: rotatedRect.center.y,
+                      id: Math.random().toString(36).substr(2, 9), 
                     });
                   }
               
@@ -405,8 +488,8 @@ export default {
         }
         
         // Cleanup contours
-        edgeContours.delete();
-        colorContours.delete();
+        edgeContours.delete(); edgeContoursH.delete(); edgeContoursV.delete();
+        colorContours.delete(); colorContoursH.delete(); colorContoursV.delete();
         // Individual contour cleanups handled by OpenCV JS GC usually roughly, 
         // but explicit delete of retrieved Mat is not needed if we didn't clone them
         // However, 'contours.get(i)' returns a new Mat instance strictly speaking?
@@ -614,6 +697,34 @@ export default {
       const rect = cv.minAreaRect(approx);
       return Math.round(rect.angle);
     },
+    // Helper to calculate 4 vertices of a rotated rectangle
+    // 计算旋转矩形4个顶点的辅助方法
+    calculateVertices(center, width, height, angle) {
+       const rad = (angle * Math.PI) / 180;
+       const cos = Math.cos(rad);
+       const sin = Math.sin(rad);
+       
+       const hWidth = width / 2;
+       const hHeight = height / 2;
+       
+       // 0: top-left relative to center (before rotation) -> (-w, -h)
+       // 1: top-right -> (w, -h)
+       // 2: bottom-right -> (w, h)
+       // 3: bottom-left -> (-w, h)
+       // Applying rotation: x' = x*cos - y*sin, y' = x*sin + y*cos
+       
+       const corners = [
+           { x: -hWidth, y: -hHeight },
+           { x: hWidth, y: -hHeight },
+           { x: hWidth, y: hHeight },
+           { x: -hWidth, y: hHeight }
+       ];
+       
+       return corners.map(p => ({
+           x: center.x + (p.x * cos - p.y * sin),
+           y: center.y + (p.x * sin + p.y * cos)
+       }));
+    },
     // Detect separating lines (Blue and Green)
     // 检测分割线（蓝色和绿色）
     detectSeparatingLines(srcMat) {
@@ -766,6 +877,9 @@ export default {
                   rotH = estimatedH;
               }
 
+              const cx = x + width / 2;
+              const cy = largeCandidate.y + largeCandidate.height / 2;
+              
               splitSpaces.push({
                 x: x,
                 y: largeCandidate.y,
@@ -774,11 +888,12 @@ export default {
                 angle: largeCandidate.angle,
                 rawAngle: largeCandidate.rawAngle,
                 rotatedWidth: rotW, // Use estimated
-                rotatedHeight: rotH, 
+                rotatedHeight: rotH,
+                vertices: this.calculateVertices({x: cx, y: cy}, rotW, rotH, largeCandidate.angle),
                 number: null,
                 area: area,
-                centerX: x + width / 2,
-                centerY: largeCandidate.y + largeCandidate.height / 2,
+                centerX: cx,
+                centerY: cy,
                 id: Math.random().toString(36).substr(2, 9),
               });
             }
@@ -846,6 +961,9 @@ export default {
                   // So we just use estimatedW/H.
               }
 
+              const cx = largeCandidate.x + largeCandidate.width / 2;
+              const cy = y + height / 2;
+
               splitSpaces.push({
                 x: largeCandidate.x,
                 y: y,
@@ -855,10 +973,11 @@ export default {
                 rawAngle: largeCandidate.rawAngle,
                 rotatedWidth: rotW, // Use estimated rotated dimensions
                 rotatedHeight: rotH,
+                vertices: this.calculateVertices({x: cx, y: cy}, rotW, rotH, largeCandidate.angle),
                 number: null,
                 area: area,
-                centerX: largeCandidate.x + largeCandidate.width / 2,
-                centerY: y + height / 2,
+                centerX: cx,
+                centerY: cy,
                 id: Math.random().toString(36).substr(2, 9),
               });
             }
@@ -993,20 +1112,19 @@ export default {
         const newWidth = Math.abs(shortDim * Math.sin(rad)) + Math.abs(segmentLength * Math.cos(rad));
         const newHeight = Math.abs(shortDim * Math.cos(rad)) + Math.abs(segmentLength * Math.sin(rad));
         
+        const rW = isWidthLonger ? segmentLength : rotatedWidth;
+        const rH = isWidthLonger ? rotatedHeight : segmentLength;
+
         splitSpaces.push({
           x: cx - newWidth / 2, // Approximate top-left
-          // 近似左上角
           y: cy - newHeight / 2,
           width: newWidth, // Approximate
-          // 近似
           height: newHeight, // Approximate
-          // 近似
           angle: angle, // Preserve the normalized angle
-          // 保留标准化角度
           rawAngle: candidate.rawAngle, // Preserve raw
-          // 保留原始角度
-          rotatedWidth: isWidthLonger ? segmentLength : rotatedWidth,
-          rotatedHeight: isWidthLonger ? rotatedHeight : segmentLength,
+          rotatedWidth: rW,
+          rotatedHeight: rH,
+          vertices: this.calculateVertices({x: cx, y: cy}, rW, rH, angle),
           number: null,
           area: candidate.area / estimatedCount,
           centerX: cx,
@@ -1295,6 +1413,7 @@ export default {
                         rawAngle: rawAngle,
                         rotatedWidth: splitW,
                         rotatedHeight: splitH,
+                        vertices: this.calculateVertices({x: newCX, y: newCY}, splitW, splitH, candidate.angle),
                         number: null,
                         area: splitW * splitH,
                         centerX: newCX,
