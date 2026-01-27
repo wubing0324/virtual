@@ -37,18 +37,66 @@
             <!-- 车位识别 Tab -->
             <div v-show="activeTab === 'recognize'" class="tab-panel recognize-panel">
               
-              <!-- 如果没有任何数据，显示加载按钮 -->
-              <div v-if="recognizedSpaces.length === 0" class="empty-state">
-                <div class="empty-text">暂无识别数据</div>
-                <button class="action-btn" @click="loadSimulationData">
-                  加载最新的识别结果
+              <!-- 识别通过控制面板 -->
+              <div class="recognition-controls">
+                <div class="control-group">
+                   <label>边框颜色</label>
+                   <select v-model="recognitionConfig.borderColor" class="config-select">
+                      <option value="blue">蓝色 (Blue)</option>
+                      <option value="red">红色 (Red)</option>
+                      <option value="green">绿色 (Green)</option>
+                      <option value="white">白色 (White)</option>
+                   </select>
+                </div>
+                
+                <button 
+                  class="action-btn recognize-btn" 
+                  :disabled="isRecognizing"
+                  @click="startRecognition"
+                >
+                  {{ isRecognizing ? '识别中...' : '开始识别' }}
+                </button>
+                
+                <div v-if="recognitionStatus" :class="['status-text', recognitionStatusType]">
+                   {{ recognitionStatus }}
+                </div>
+              </div>
+
+              <!-- 如果没有任何数据，显示加载模拟数据按钮 (作为备用) -->
+              <div v-if="recognizedSpaces.length === 0 && !isRecognizing" class="empty-state">
+                <div class="empty-text">暂无数据，请点击上方识别或加载模拟数据</div>
+                <button class="text-btn" @click="loadSimulationData">
+                  加载模拟数据
                 </button>
               </div>
               
               <!-- 识别结果列表 -->
               <div v-if="recognizedSpaces.length > 0" class="spaces-list">
+                <div class="filter-group">
+                  <div class="filter-item">
+                    <label>最小面积: {{ filter.currentMin }}</label>
+                    <input 
+                      type="range" 
+                      :min="filter.minArea" 
+                      :max="filter.maxArea" 
+                      v-model.number="filter.currentMin"
+                      @input="onFilterChange"
+                    >
+                  </div>
+                  <div class="filter-item">
+                    <label>最大面积: {{ filter.currentMax }}</label>
+                    <input 
+                      type="range" 
+                      :min="filter.minArea" 
+                      :max="filter.maxArea" 
+                      v-model.number="filter.currentMax"
+                      @input="onFilterChange"
+                    >
+                  </div>
+                </div>
+                
                 <div class="list-header">
-                  <span>识别结果 ({{ recognizedSpaces.length }} 个)</span>
+                  <span>识别结果 ({{ recognizedSpaces.length }} / {{ allRecognizedSpaces.length }})</span>
                   <button class="sort-btn" @click="sortSpaces" title="重新排序">
                     <span class="icon">⇅</span> 排序
                   </button>
@@ -117,6 +165,26 @@ export default {
       activeTab: 'recognize', // 'recognize' 或 'shapes'
       selectedSpaceIndex: null, // 当前选中的车位索引
       spaceFabricObjects: new Map(), // 存储车位对应的 Fabric 对象
+      
+      // Recognition State
+      isRecognizing: false,
+      recognitionStatus: '',
+      recognitionStatusType: 'info', // info, success, error
+      recognitionConfig: {
+        borderColor: 'blue',
+        imgsz: 640,
+        conf: 0.25
+      },
+      
+      // Filter State
+      allRecognizedSpaces: [], // Store all spaces for filtering
+      filter: {
+          minArea: 0, 
+          maxArea: 10000, // Default max
+          currentMin: 0,
+          currentMax: 10000
+      },
+      filterTimer: null,
     };
   },
   computed: {
@@ -128,48 +196,131 @@ export default {
     // 如果没有图片，重定向到上传页面
     if (!this.imageUrl) {
       this.$router.push('/');
+      return;
+    }
+    
+    // Check for API results from Vuex
+    const apiResults = this.$store.state.recognitionResults;
+    if (apiResults && apiResults.length > 0) {
+        // API results structure: User snippet said 'results = data.results'. 
+        // We need to know if 'results' is [ { boxes: [] } ] (batch) or [ box, box ] (single image flatten).
+        // Based on typical YOLO API for single image, it might be the list of boxes directly OR an object with .boxes.
+        // Let's assume it matches the JSON structure we used: [ { boxes: [...] } ] or just [...]
+        // We will try to find the array of boxes.
+        let boxes = [];
+        if (apiResults[0] && apiResults[0].boxes) {
+            boxes = apiResults[0].boxes;
+        } else if (Array.isArray(apiResults)) {
+             // Maybe the results IS the list of boxes?
+             // Or maybe it's a list of result objects for batch 1.
+             // Let's check a property of the first item to guess.
+             if (apiResults[0].xywhr || apiResults[0].xyxyxyxy) {
+                 boxes = apiResults;
+             } else if (apiResults[0].boxes) {
+                 boxes = apiResults[0].boxes;
+             }
+        }
+        
+        if (boxes.length > 0) {
+            console.log('Loaded recognition results from API store');
+            this.processBoxes(boxes);
+        }
     }
   },
   methods: {
-    // 加载模拟数据
-    loadSimulationData() {
-      try {
-        const obbData = require('@/assets/const/obb-result-2026-01-26-06-59-28.json');
-        if (obbData && obbData.length > 0) {
-           const dataItem = obbData[0];
-           if (dataItem && dataItem.boxes) {
-              const spaces = dataItem.boxes.map((box, index) => {
-                // Use vertices to calculate robust geometry for Fabric.js
-                // JSON xywhr can be ambiguous about which side is width vs height relative to angle
-                const points = box.xyxyxyxy;
+    async startRecognition() {
+        if (!this.imageUrl) {
+            alert("没有图片可识别");
+            return;
+        }
+        
+        this.isRecognizing = true;
+        this.recognitionStatus = "正在请求检测接口...";
+        this.recognitionStatusType = "info";
+        
+        try {
+            const fd = new FormData();
+            fd.append("mode", "obb");
+            fd.append("imgsz", this.recognitionConfig.imgsz);
+            fd.append("conf", this.recognitionConfig.conf);
+            fd.append("border_color", this.recognitionConfig.borderColor);
+            
+            // Convert Base64/URL to Blob
+            const res = await fetch(this.imageUrl);
+            const blob = await res.blob();
+            fd.append("file", blob, "image.png");
+            
+            const apiUrl = "/api/detect";
+            const response = await fetch(apiUrl, {
+                method: "POST",
+                body: fd
+            });
+            
+            const data = await response.json().catch(() => ({}));
+            
+            if (!response.ok) {
+                throw new Error(data.error || `请求失败 ${response.status}`);
+            }
+            
+            const results = data.results || [];
+            if (results.length > 0 && results[0].boxes) {
+                this.processBoxes(results[0].boxes);
+                this.recognitionStatus = `识别完成，找到 ${results[0].boxes.length} 个目标`;
+                this.recognitionStatusType = "success";
                 
-                // 1. Calculate Center
-                let sumX = 0, sumY = 0;
-                points.forEach(p => { sumX += p[0]; sumY += p[1]; });
-                const centerX = sumX / 4;
-                const centerY = sumY / 4;
+                // Save to store just in case
+                this.$store.dispatch('saveRecognitionResults', results);
+            } else {
+                 this.recognitionStatus = "未检测到目标";
+                 this.recognitionStatusType = "info";
+            }
+            
+        } catch (error) {
+            console.error("Recognition Error:", error);
+            this.recognitionStatus = "识别失败: " + error.message;
+            this.recognitionStatusType = "error";
+        } finally {
+            this.isRecognizing = false;
+        }
+    },
 
-                // 2. Calculate edge lengths and angles
-                const p0 = points[0];
-                const p1 = points[1];
-                const p2 = points[2];
-                
-                // Edge 0: P0 -> P1
-                const dx1 = p1[0] - p0[0];
-                const dy1 = p1[1] - p0[1];
+    processBoxes(boxes) {
+        const spaces = boxes.map((box, index) => {
+            // Use vertices to calculate robust geometry for Fabric.js
+            // JSON xywhr can be ambiguous about which side is width vs height relative to angle
+            const points = box.xyxyxyxy; // xyxyxyxy is most robust
+            
+            let width, height, angle, centerX, centerY;
+            
+            if (points && points.length === 4) {
+                 // 1. Calculate Center
+                let sumX = 0, sumY = 0;
+                points.forEach(p => { 
+                    // Handle if points are arrays [x,y] or objects {x,y}
+                    const px = Array.isArray(p) ? p[0] : p.x;
+                    const py = Array.isArray(p) ? p[1] : p.y;
+                    sumX += px; sumY += py; 
+                });
+                centerX = sumX / 4;
+                centerY = sumY / 4;
+
+                // 2. Calculate edge lengths
+                const p0 = Array.isArray(points[0]) ? {x:points[0][0], y:points[0][1]} : points[0];
+                const p1 = Array.isArray(points[1]) ? {x:points[1][0], y:points[1][1]} : points[1];
+                const p2 = Array.isArray(points[2]) ? {x:points[2][0], y:points[2][1]} : points[2];
+                // const p3 = points[3];
+
+                const dx1 = p1.x - p0.x;
+                const dy1 = p1.y - p0.y;
                 const len1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
                 const angle1 = Math.atan2(dy1, dx1) * 180 / Math.PI;
 
-                // Edge 1: P1 -> P2
-                const dx2 = p2[0] - p1[0];
-                const dy2 = p2[1] - p1[1];
+                const dx2 = p2.x - p1.x;
+                const dy2 = p2.y - p1.y;
                 const len2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
                 const angle2 = Math.atan2(dy2, dx2) * 180 / Math.PI;
                 
                 // 3. Determine Width/Height/Angle
-                // Strategy: Prefer the longer side as "Width" (Horizontal-ish visual preference)
-                let width, height, angle;
-                
                 if (len1 > len2) {
                    width = len1;
                    height = len2;
@@ -180,24 +331,88 @@ export default {
                    angle = angle2;
                 }
                 
-                return {
-                  id: `space_${Date.now()}_${index}`,
-                  x: centerX, 
-                  y: centerY,
-                  centerX: centerX,
-                  centerY: centerY,
-                  width: width,
-                  height: height,
-                  angle: angle,
-                  rotation: angle,
-                  // These force createParkingSpace to use the precise dimensions
-                  rotatedWidth: width, 
-                  rotatedHeight: height,
-                  number: null,
-                };
-              });
-              
-              this.handleSpacesLoaded(spaces);
+                // Format vertices for storage (createSpace uses them too now)
+            } else {
+                // Fallback to xywhr if no vertices (shouldn't happen with updated OBB)
+                width = box.xywhr ? box.xywhr.width : 50;
+                height = box.xywhr ? box.xywhr.height : 100;
+                angle = box.xywhr ? box.xywhr.angle_deg : 0;
+                centerX = box.xywhr ? box.xywhr.center_x : 0;
+                centerY = box.xywhr ? box.xywhr.center_y : 0;
+            }
+            
+            return {
+              id: `space_${Date.now()}_${index}`,
+              x: centerX, 
+              y: centerY,
+              centerX: centerX,
+              centerY: centerY,
+              width: width,
+              height: height,
+              area: width * height, // Store area for filtering
+              angle: angle,
+              rotation: angle,
+              rotatedWidth: width, 
+              rotatedHeight: height,
+              vertices: points ? points.map(p => Array.isArray(p) ? {x:p[0], y:p[1]} : p) : null,
+              number: box.class_name || null, // Map class_name to number/label if available
+            };
+        });
+        
+        this.handleSpacesLoaded(spaces);
+    },
+    
+    onFilterChange() {
+        if (this.filterTimer) clearTimeout(this.filterTimer);
+        this.filterTimer = setTimeout(() => {
+            this.applyFilter();
+        }, 300); // 300ms debounce
+    },
+    
+    applyFilter() {
+        const { currentMin, currentMax } = this.filter;
+        
+        // Filter spaces by area
+        const filtered = this.allRecognizedSpaces.filter(space => {
+            const area = space.area || (space.width * space.height);
+            return area >= currentMin && area <= currentMax;
+        });
+        
+        this.recognizedSpaces = filtered;
+        
+        // Re-render canvas
+        // Clear old objects first? renderSpaces clears mapping but createParkingSpace adds new ones.
+        // We should clear the canvas of old parking spaces first.
+        if (this.canvas) {
+            // Remove existing parking objects
+            // this.canvas.getObjects(); 
+            // We use spaceFabricObjects map for precise removal.
+            // Actually our parking objects have 'parkingIndex' set.
+            // Or better, use spaceFabricObjects map?
+            // But previous renderSpaces didn't clear well.
+            // Let's rely on spaceFabricObjects to remove them?
+            // Or just clear all Rects? No, might remove other things.
+            // Use this.spaceFabricObjects.
+            
+            this.spaceFabricObjects.forEach(obj => {
+                this.canvas.remove(obj);
+                if (obj.parkingText) this.canvas.remove(obj.parkingText);
+            });
+            this.spaceFabricObjects.clear();
+            
+            // Re-render filtered list
+            this.renderSpaces(); 
+        }
+    },
+    
+    // 加载模拟数据
+    loadSimulationData() {
+      try {
+        const obbData = require('@/assets/const/obb-result-2026-01-26-06-59-28.json');
+        if (obbData && obbData.length > 0) {
+           const dataItem = obbData[0];
+           if (dataItem && dataItem.boxes) {
+              this.processBoxes(dataItem.boxes);
            }
         }
       } catch (e) {
@@ -208,33 +423,57 @@ export default {
     
     // 处理加载的车位数据
     handleSpacesLoaded(spaces) {
-      // 1. 确保每个车位都有 ID
+      // 1. 确保每个车位都有 ID 并计算面积（如果还没有）
       spaces.forEach((space, i) => {
           if (!space.id) {
               space.id = `space_${Date.now()}_${i}`;
           }
+          if (space.area === undefined) {
+              space.area = space.width * space.height;
+          }
       });
-
-      // 对车位进行排序
-      const sortedSpaces = [...spaces].sort(this.compareSpaces);
-
-      this.recognizedSpaces = sortedSpaces;
-      this.spaceFabricObjects.clear(); // 清空之前的映射
-      console.log('加载的车位数据(已排序):', sortedSpaces);
       
-      this.renderSpaces();
+      // Filter out abnormally large spaces (User requested 500, but assuming 10000 for realistic pixel areas in 640x640)
+      // 过滤掉面积过大的异常数据
+      const MAX_ALLOWED_AREA = 10000; 
+      const validSpaces = spaces.filter(s => s.area <= MAX_ALLOWED_AREA);
+
+      // Store ALL valid spaces
+      this.allRecognizedSpaces = validSpaces;
+
+      // Calculate min/max area for slider initialization from VALID spaces
+      if (validSpaces.length > 0) {
+          const areas = validSpaces.map(s => s.area);
+          const minArea = Math.floor(Math.min(...areas));
+          const maxArea = Math.ceil(Math.max(...areas));
+          
+          // Set slider bounds
+          this.filter.minArea = Math.max(0, minArea - 100); 
+          // Set max slider to the max found area (which is already <= 10000)
+          this.filter.maxArea = maxArea;
+          
+          // Init current values to full range
+          this.filter.currentMin = this.filter.minArea;
+          this.filter.currentMax = this.filter.maxArea;
+      } else {
+          // Fallback if no valid spaces
+           this.filter.minArea = 0;
+           this.filter.maxArea = 10000;
+           this.filter.currentMin = 0;
+           this.filter.currentMax = 10000;
+      }
+
+      // Apply initial filter
+      this.applyFilter();
     },
 
     // 渲染车位到画布
     renderSpaces() {
-      if (this.canvas && this.recognizedSpaces.length > 0) {
-        // 清除现有的车位对象 (Optional: user might want to keep manually added ones? Let's assume replace for now)
-        // actually, handleDeleteObject removes from recognizedSpaces, so maybe we should clear only recognized/old ones?
-        // simple approach: rendering simply adds them. 
-        // Better: Check if they are already on canvas to avoid duplicates or clear canvas first?
-        // Since this is a "Load" action, maybe clear previous recognized objects?
-        
-        // Let's just create them. logic in createParkingSpace handles adding to canvas.
+      if (this.canvas) {
+         // Clear previous objects if not already done in applyFilter
+         // (applyFilter logic handles clearing via spaceFabricObjects map reference, but let's be safe)
+         // Actually renderSpaces loop adds new ones.
+         
         this.recognizedSpaces.forEach((space, index) => {
           const fabricObj = this.createParkingSpace(space, index);
           if (fabricObj) {
@@ -246,6 +485,11 @@ export default {
 
     handleCanvasReady(canvas) {
       this.canvas = canvas;
+      if (this.recognizedSpaces.length > 0) {
+        this.$nextTick(() => {
+          this.renderSpaces();
+        });
+      }
     },
     handleObjectSelected(selectedData) {
       this.selectedObject = selectedData;
@@ -764,6 +1008,69 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden; /* 禁止整体滚动，交给内部列表 */
+  gap: 10px;
+}
+
+.recognition-controls {
+  padding: 10px;
+  background: #f0f2f5;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.control-group label {
+    font-size: 12px;
+    color: #666;
+    font-weight: bold;
+}
+
+.config-select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+}
+
+.recognize-btn {
+    width: 100%;
+    background-color: #2196F3; /* Blue */
+}
+.recognize-btn:hover {
+    background-color: #1976D2;
+}
+
+.text-btn {
+    background: none;
+    border: none;
+    color: #2196F3;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.status-text {
+    font-size: 12px;
+    padding: 8px;
+    border-radius: 4px;
+    background: #e3f2fd;
+    color: #0d47a1;
+}
+.status-text.error {
+    background: #ffebee;
+    color: #c62828;
+}
+.status-text.success {
+    background: #e8f5e9;
+    color: #2e7d32;
 }
 
 /* 图形库面板优化 */
@@ -893,6 +1200,29 @@ export default {
 }
 
 /* 响应式设计 */
+/* Filter Controls */
+.filter-group {
+    padding: 10px;
+    background: #fcfcfc;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.filter-item label {
+    font-size: 12px;
+    color: #666;
+}
+.filter-item input[type=range] {
+    width: 100%;
+}
+
 @media (max-width: 768px) {
   .edit-area-container {
     flex-direction: column;

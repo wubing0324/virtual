@@ -65,6 +65,7 @@ export default {
       previewImage: null,
       imageFile: null,
       isDragOver: false,
+      isLoading: false,
     };
   },
   methods: {
