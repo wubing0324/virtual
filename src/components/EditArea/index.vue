@@ -1284,11 +1284,24 @@ export default {
 }
 
 .recognize-btn {
-    width: 100%;
-    background-color: #2196F3; /* Blue */
+  width: 100%;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  background: #4CAF50;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
 }
-.recognize-btn:hover {
-    background-color: #1976D2;
+
+.recognize-btn:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.recognize-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
 }
 
 .text-btn {
