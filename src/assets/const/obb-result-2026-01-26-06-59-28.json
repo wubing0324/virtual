@@ -1,0 +1,7007 @@
+[
+  {
+    "boxes": [
+      {
+        "angle_deg": 1.86,
+        "angle_rad": 0.03242105679451564,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 1.86,
+          "angle_rad": 0.03242105679451564,
+          "center_x": 265.3988952636719,
+          "center_y": 60.61834716796875,
+          "height": 91.69234466552734,
+          "width": 406.04058837890625
+        },
+        "xyxyxyxy": [
+          [
+            466.8263854980469,
+            113.02140045166016
+          ],
+          [
+            60.99917221069336,
+            99.85944366455078
+          ],
+          [
+            63.971405029296875,
+            8.215293884277344
+          ],
+          [
+            469.7986145019531,
+            21.37725067138672
+          ]
+        ]
+      },
+      {
+        "angle_deg": 86.04,
+        "angle_rad": 1.501600053014505,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 86.04,
+          "angle_rad": 1.501600053014505,
+          "center_x": 173.06655883789062,
+          "center_y": 888.960693359375,
+          "height": 84.9743881225586,
+          "width": 238.61572265625
+        },
+        "xyxyxyxy": [
+          [
+            56.9818229675293,
+            939.5952758789062
+          ],
+          [
+            51.10660934448242,
+            854.8242797851562
+          ],
+          [
+            289.15130615234375,
+            838.3261108398438
+          ],
+          [
+            295.0265197753906,
+            923.0971069335938
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 217.5,
+          "center_y": 241,
+          "height": 105,
+          "width": 138
+        },
+        "xyxyxyxy": [
+          [
+            270,
+            310
+          ],
+          [
+            165,
+            310
+          ],
+          [
+            165,
+            172
+          ],
+          [
+            270,
+            172
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1150.5,
+          "center_y": 705.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            1203,
+            774
+          ],
+          [
+            1098,
+            774
+          ],
+          [
+            1098,
+            637
+          ],
+          [
+            1203,
+            637
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1017.5,
+          "center_y": 705.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            1070,
+            774
+          ],
+          [
+            965,
+            774
+          ],
+          [
+            965,
+            637
+          ],
+          [
+            1070,
+            637
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 217.5,
+          "center_y": 705.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            270,
+            774
+          ],
+          [
+            165,
+            774
+          ],
+          [
+            165,
+            637
+          ],
+          [
+            270,
+            637
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 217.5,
+          "center_y": 469.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            270,
+            538
+          ],
+          [
+            165,
+            538
+          ],
+          [
+            165,
+            401
+          ],
+          [
+            270,
+            401
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 84.5,
+          "center_y": 469.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            137,
+            538
+          ],
+          [
+            32,
+            538
+          ],
+          [
+            32,
+            401
+          ],
+          [
+            137,
+            401
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1150.5,
+          "center_y": 465.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            1203,
+            534
+          ],
+          [
+            1098,
+            534
+          ],
+          [
+            1098,
+            397
+          ],
+          [
+            1203,
+            397
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1017.5,
+          "center_y": 465.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            1070,
+            534
+          ],
+          [
+            965,
+            534
+          ],
+          [
+            965,
+            397
+          ],
+          [
+            1070,
+            397
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 751.5,
+          "center_y": 465.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            804,
+            534
+          ],
+          [
+            699,
+            534
+          ],
+          [
+            699,
+            397
+          ],
+          [
+            804,
+            397
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 484.5,
+          "center_y": 465.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            537,
+            534
+          ],
+          [
+            432,
+            534
+          ],
+          [
+            432,
+            397
+          ],
+          [
+            537,
+            397
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1150.5,
+          "center_y": 236.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            1203,
+            305
+          ],
+          [
+            1098,
+            305
+          ],
+          [
+            1098,
+            168
+          ],
+          [
+            1203,
+            168
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1017.5,
+          "center_y": 236.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            1070,
+            305
+          ],
+          [
+            965,
+            305
+          ],
+          [
+            965,
+            168
+          ],
+          [
+            1070,
+            168
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 751.5,
+          "center_y": 236.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            804,
+            305
+          ],
+          [
+            699,
+            305
+          ],
+          [
+            699,
+            168
+          ],
+          [
+            804,
+            168
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 484.5,
+          "center_y": 236.5,
+          "height": 105,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            537,
+            305
+          ],
+          [
+            432,
+            305
+          ],
+          [
+            432,
+            168
+          ],
+          [
+            537,
+            168
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 637.5,
+          "center_y": 465.5,
+          "height": 71,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            673,
+            534
+          ],
+          [
+            602,
+            534
+          ],
+          [
+            602,
+            397
+          ],
+          [
+            673,
+            397
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 637.5,
+          "center_y": 236.5,
+          "height": 71,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            673,
+            305
+          ],
+          [
+            602,
+            305
+          ],
+          [
+            602,
+            168
+          ],
+          [
+            673,
+            168
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1152.5,
+          "center_y": 891,
+          "height": 70,
+          "width": 105
+        },
+        "xyxyxyxy": [
+          [
+            1205,
+            926
+          ],
+          [
+            1100,
+            926
+          ],
+          [
+            1100,
+            856
+          ],
+          [
+            1205,
+            856
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1018.5,
+          "center_y": 891,
+          "height": 70,
+          "width": 105
+        },
+        "xyxyxyxy": [
+          [
+            1071,
+            926
+          ],
+          [
+            966,
+            926
+          ],
+          [
+            966,
+            856
+          ],
+          [
+            1071,
+            856
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 692.5,
+          "height": 70,
+          "width": 105
+        },
+        "xyxyxyxy": [
+          [
+            1438,
+            745
+          ],
+          [
+            1368,
+            745
+          ],
+          [
+            1368,
+            640
+          ],
+          [
+            1438,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 484.5,
+          "center_y": 672,
+          "height": 70,
+          "width": 105
+        },
+        "xyxyxyxy": [
+          [
+            537,
+            707
+          ],
+          [
+            432,
+            707
+          ],
+          [
+            432,
+            637
+          ],
+          [
+            537,
+            637
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 464.5,
+          "height": 70,
+          "width": 105
+        },
+        "xyxyxyxy": [
+          [
+            1438,
+            517
+          ],
+          [
+            1368,
+            517
+          ],
+          [
+            1368,
+            412
+          ],
+          [
+            1438,
+            412
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 350.5,
+          "height": 70,
+          "width": 105
+        },
+        "xyxyxyxy": [
+          [
+            1438,
+            403
+          ],
+          [
+            1368,
+            403
+          ],
+          [
+            1368,
+            298
+          ],
+          [
+            1438,
+            298
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 234.5,
+          "height": 70,
+          "width": 105
+        },
+        "xyxyxyxy": [
+          [
+            1438,
+            287
+          ],
+          [
+            1368,
+            287
+          ],
+          [
+            1368,
+            182
+          ],
+          [
+            1438,
+            182
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 892.5,
+          "center_y": 203,
+          "height": 70,
+          "width": 105
+        },
+        "xyxyxyxy": [
+          [
+            945,
+            238
+          ],
+          [
+            840,
+            238
+          ],
+          [
+            840,
+            168
+          ],
+          [
+            945,
+            168
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1288.5,
+          "center_y": 43,
+          "height": 70,
+          "width": 105
+        },
+        "xyxyxyxy": [
+          [
+            1341,
+            78
+          ],
+          [
+            1236,
+            78
+          ],
+          [
+            1236,
+            8
+          ],
+          [
+            1341,
+            8
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1156.5,
+          "center_y": 43,
+          "height": 70,
+          "width": 105
+        },
+        "xyxyxyxy": [
+          [
+            1209,
+            78
+          ],
+          [
+            1104,
+            78
+          ],
+          [
+            1104,
+            8
+          ],
+          [
+            1209,
+            8
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1024.5,
+          "center_y": 43,
+          "height": 70,
+          "width": 105
+        },
+        "xyxyxyxy": [
+          [
+            1077,
+            78
+          ],
+          [
+            972,
+            78
+          ],
+          [
+            972,
+            8
+          ],
+          [
+            1077,
+            8
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 888.5,
+          "center_y": 43,
+          "height": 70,
+          "width": 105
+        },
+        "xyxyxyxy": [
+          [
+            941,
+            78
+          ],
+          [
+            836,
+            78
+          ],
+          [
+            836,
+            8
+          ],
+          [
+            941,
+            8
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 881,
+          "center_y": 891,
+          "height": 70,
+          "width": 90
+        },
+        "xyxyxyxy": [
+          [
+            926,
+            926
+          ],
+          [
+            836,
+            926
+          ],
+          [
+            836,
+            856
+          ],
+          [
+            926,
+            856
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 761,
+          "center_y": 891,
+          "height": 70,
+          "width": 90
+        },
+        "xyxyxyxy": [
+          [
+            806,
+            926
+          ],
+          [
+            716,
+            926
+          ],
+          [
+            716,
+            856
+          ],
+          [
+            806,
+            856
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 654.5,
+          "center_y": 705.5,
+          "height": 37,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            673,
+            774
+          ],
+          [
+            636,
+            774
+          ],
+          [
+            636,
+            637
+          ],
+          [
+            673,
+            637
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 393.5,
+          "center_y": 705.5,
+          "height": 37,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            412,
+            774
+          ],
+          [
+            375,
+            774
+          ],
+          [
+            375,
+            637
+          ],
+          [
+            412,
+            637
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 393.5,
+          "center_y": 465.5,
+          "height": 37,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            412,
+            534
+          ],
+          [
+            375,
+            534
+          ],
+          [
+            375,
+            397
+          ],
+          [
+            412,
+            397
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 393.5,
+          "center_y": 236.5,
+          "height": 37,
+          "width": 137
+        },
+        "xyxyxyxy": [
+          [
+            412,
+            305
+          ],
+          [
+            375,
+            305
+          ],
+          [
+            375,
+            168
+          ],
+          [
+            412,
+            168
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1265.5,
+          "center_y": 891,
+          "height": 70,
+          "width": 71
+        },
+        "xyxyxyxy": [
+          [
+            1301,
+            926
+          ],
+          [
+            1230,
+            926
+          ],
+          [
+            1230,
+            856
+          ],
+          [
+            1301,
+            856
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 66.5,
+          "center_y": 750,
+          "height": 70,
+          "width": 71
+        },
+        "xyxyxyxy": [
+          [
+            102,
+            785
+          ],
+          [
+            31,
+            785
+          ],
+          [
+            31,
+            715
+          ],
+          [
+            102,
+            715
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 901.5,
+          "center_y": 499,
+          "height": 70,
+          "width": 71
+        },
+        "xyxyxyxy": [
+          [
+            937,
+            534
+          ],
+          [
+            866,
+            534
+          ],
+          [
+            866,
+            464
+          ],
+          [
+            937,
+            464
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 101.5,
+          "center_y": 276,
+          "height": 70,
+          "width": 71
+        },
+        "xyxyxyxy": [
+          [
+            137,
+            311
+          ],
+          [
+            66,
+            311
+          ],
+          [
+            66,
+            241
+          ],
+          [
+            137,
+            241
+          ]
+        ]
+      },
+      {
+        "angle_deg": 41.99,
+        "angle_rad": 0.7328151129382697,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 41.99,
+          "angle_rad": 0.7328151129382697,
+          "center_x": 516.7044067382812,
+          "center_y": 879.8840942382812,
+          "height": 36.94171905517578,
+          "width": 82.95162200927734
+        },
+        "xyxyxyxy": [
+          [
+            535.1767578125,
+            921.3592529296875
+          ],
+          [
+            473.5193176269531,
+            865.8675537109375
+          ],
+          [
+            498.2320556640625,
+            838.408935546875
+          ],
+          [
+            559.8895263671875,
+            893.900634765625
+          ]
+        ]
+      },
+      {
+        "angle_deg": 41.99,
+        "angle_rad": 0.7328151129382697,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 41.99,
+          "angle_rad": 0.7328151129382697,
+          "center_x": 595.7044067382812,
+          "center_y": 878.8841552734375,
+          "height": 36.94171905517578,
+          "width": 82.95162200927734
+        },
+        "xyxyxyxy": [
+          [
+            614.1767578125,
+            920.3593139648438
+          ],
+          [
+            552.519287109375,
+            864.8676147460938
+          ],
+          [
+            577.2320556640625,
+            837.4089965820312
+          ],
+          [
+            638.8895263671875,
+            892.9006958007812
+          ]
+        ]
+      },
+      {
+        "angle_deg": 41.99,
+        "angle_rad": 0.7328151129382697,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 41.99,
+          "angle_rad": 0.7328151129382697,
+          "center_x": 668.7044677734375,
+          "center_y": 876.8840942382812,
+          "height": 36.94171905517578,
+          "width": 82.95162200927734
+        },
+        "xyxyxyxy": [
+          [
+            687.1768188476562,
+            918.3592529296875
+          ],
+          [
+            625.5193481445312,
+            862.8675537109375
+          ],
+          [
+            650.2321166992188,
+            835.408935546875
+          ],
+          [
+            711.8895874023438,
+            890.900634765625
+          ]
+        ]
+      },
+      {
+        "angle_deg": 41.99,
+        "angle_rad": 0.7328151129382697,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 41.99,
+          "angle_rad": 0.7328151129382697,
+          "center_x": 443.4668884277344,
+          "center_y": 877.3703002929688,
+          "height": 36.941715240478516,
+          "width": 82.95162200927734
+        },
+        "xyxyxyxy": [
+          [
+            461.93927001953125,
+            918.845458984375
+          ],
+          [
+            400.28179931640625,
+            863.353759765625
+          ],
+          [
+            424.9945068359375,
+            835.8951416015625
+          ],
+          [
+            486.6519775390625,
+            891.3868408203125
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 893,
+          "center_y": 300.5,
+          "height": 37,
+          "width": 70
+        },
+        "xyxyxyxy": [
+          [
+            928,
+            319
+          ],
+          [
+            858,
+            319
+          ],
+          [
+            858,
+            282
+          ],
+          [
+            928,
+            282
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1402,
+          "center_y": 147.5,
+          "height": 37,
+          "width": 70
+        },
+        "xyxyxyxy": [
+          [
+            1437,
+            166
+          ],
+          [
+            1367,
+            166
+          ],
+          [
+            1367,
+            129
+          ],
+          [
+            1437,
+            129
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 107.5,
+          "height": 37,
+          "width": 70
+        },
+        "xyxyxyxy": [
+          [
+            1438,
+            126
+          ],
+          [
+            1368,
+            126
+          ],
+          [
+            1368,
+            89
+          ],
+          [
+            1438,
+            89
+          ]
+        ]
+      },
+      {
+        "angle_deg": 41.99,
+        "angle_rad": 0.7328151129382697,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 41.99,
+          "angle_rad": 0.7328151129382697,
+          "center_x": 516.6768188476562,
+          "center_y": 879.8592529296875,
+          "height": 32.48195266723633,
+          "width": 78.41753387451172
+        },
+        "xyxyxyxy": [
+          [
+            534.955810546875,
+            918.160400390625
+          ],
+          [
+            476.66851806640625,
+            865.7017822265625
+          ],
+          [
+            498.3978271484375,
+            841.55810546875
+          ],
+          [
+            556.6851196289062,
+            894.0167236328125
+          ]
+        ]
+      },
+      {
+        "angle_deg": 41.99,
+        "angle_rad": 0.7328151129382697,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 41.99,
+          "angle_rad": 0.7328151129382697,
+          "center_x": 595.6768188476562,
+          "center_y": 878.8591918945312,
+          "height": 32.48195266723633,
+          "width": 78.41753387451172
+        },
+        "xyxyxyxy": [
+          [
+            613.955810546875,
+            917.1603393554688
+          ],
+          [
+            555.6685791015625,
+            864.7017211914062
+          ],
+          [
+            577.3978271484375,
+            840.5580444335938
+          ],
+          [
+            635.68505859375,
+            893.0166625976562
+          ]
+        ]
+      },
+      {
+        "angle_deg": 41.99,
+        "angle_rad": 0.7328151129382697,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 41.99,
+          "angle_rad": 0.7328151129382697,
+          "center_x": 668.6768188476562,
+          "center_y": 876.8591918945312,
+          "height": 32.48195266723633,
+          "width": 78.41753387451172
+        },
+        "xyxyxyxy": [
+          [
+            686.955810546875,
+            915.1603393554688
+          ],
+          [
+            628.6685791015625,
+            862.7017211914062
+          ],
+          [
+            650.3978271484375,
+            838.5580444335938
+          ],
+          [
+            708.68505859375,
+            891.0166625976562
+          ]
+        ]
+      },
+      {
+        "angle_deg": 41.99,
+        "angle_rad": 0.7328151129382697,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 41.99,
+          "angle_rad": 0.7328151129382697,
+          "center_x": 443.49456787109375,
+          "center_y": 877.3951416015625,
+          "height": 32.48194885253906,
+          "width": 78.41753387451172
+        },
+        "xyxyxyxy": [
+          [
+            461.7735595703125,
+            915.6962890625
+          ],
+          [
+            403.48626708984375,
+            863.2376708984375
+          ],
+          [
+            425.215576171875,
+            839.093994140625
+          ],
+          [
+            483.50286865234375,
+            891.5526123046875
+          ]
+        ]
+      },
+      {
+        "angle_deg": 44.06,
+        "angle_rad": 0.7690062071509288,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 44.06,
+          "angle_rad": 0.7690062071509288,
+          "center_x": 96.13330078125,
+          "center_y": 894.1290283203125,
+          "height": 32.452999114990234,
+          "width": 78.30445098876953
+        },
+        "xyxyxyxy": [
+          [
+            80.56640625,
+            933.5481567382812
+          ],
+          [
+            57.245601654052734,
+            910.9796752929688
+          ],
+          [
+            111.7001953125,
+            854.7098999023438
+          ],
+          [
+            135.02099609375,
+            877.2783813476562
+          ]
+        ]
+      },
+      {
+        "angle_deg": 44.06,
+        "angle_rad": 0.7690062071509288,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 44.06,
+          "angle_rad": 0.7690062071509288,
+          "center_x": 196.1332550048828,
+          "center_y": 889.1290893554688,
+          "height": 32.452999114990234,
+          "width": 78.30445098876953
+        },
+        "xyxyxyxy": [
+          [
+            180.5663604736328,
+            928.5482177734375
+          ],
+          [
+            157.2455596923828,
+            905.979736328125
+          ],
+          [
+            211.7001495361328,
+            849.7099609375
+          ],
+          [
+            235.0209503173828,
+            872.2784423828125
+          ]
+        ]
+      },
+      {
+        "angle_deg": 44.06,
+        "angle_rad": 0.7690062071509288,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 44.06,
+          "angle_rad": 0.7690062071509288,
+          "center_x": 148.13323974609375,
+          "center_y": 889.1290283203125,
+          "height": 32.452999114990234,
+          "width": 78.30445098876953
+        },
+        "xyxyxyxy": [
+          [
+            132.56634521484375,
+            928.5481567382812
+          ],
+          [
+            109.24554443359375,
+            905.9796752929688
+          ],
+          [
+            163.70013427734375,
+            849.7098999023438
+          ],
+          [
+            187.02093505859375,
+            872.2783813476562
+          ]
+        ]
+      },
+      {
+        "angle_deg": 44.06,
+        "angle_rad": 0.7690062071509288,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 44.06,
+          "angle_rad": 0.7690062071509288,
+          "center_x": 249.13327026367188,
+          "center_y": 882.1290283203125,
+          "height": 32.452999114990234,
+          "width": 78.30445098876953
+        },
+        "xyxyxyxy": [
+          [
+            233.56637573242188,
+            921.5481567382812
+          ],
+          [
+            210.24557495117188,
+            898.9796752929688
+          ],
+          [
+            264.7001647949219,
+            842.7098999023438
+          ],
+          [
+            288.0209655761719,
+            865.2783813476562
+          ]
+        ]
+      },
+      {
+        "angle_deg": 44.06,
+        "angle_rad": 0.7690062071509288,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 44.06,
+          "angle_rad": 0.7690062071509288,
+          "center_x": 328.1332702636719,
+          "center_y": 66.12896728515625,
+          "height": 32.452999114990234,
+          "width": 78.30445098876953
+        },
+        "xyxyxyxy": [
+          [
+            312.5663757324219,
+            105.548095703125
+          ],
+          [
+            289.2455749511719,
+            82.97958374023438
+          ],
+          [
+            343.7001647949219,
+            26.7098388671875
+          ],
+          [
+            367.0209655761719,
+            49.278350830078125
+          ]
+        ]
+      },
+      {
+        "angle_deg": 44.06,
+        "angle_rad": 0.7690062071509288,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 44.06,
+          "angle_rad": 0.7690062071509288,
+          "center_x": 427.1332702636719,
+          "center_y": 63.12895584106445,
+          "height": 32.452999114990234,
+          "width": 78.30445098876953
+        },
+        "xyxyxyxy": [
+          [
+            411.5663757324219,
+            102.54808044433594
+          ],
+          [
+            388.2455749511719,
+            79.97956848144531
+          ],
+          [
+            442.7001647949219,
+            23.70983123779297
+          ],
+          [
+            466.0209655761719,
+            46.278343200683594
+          ]
+        ]
+      },
+      {
+        "angle_deg": 44.06,
+        "angle_rad": 0.7690062071509288,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 44.06,
+          "angle_rad": 0.7690062071509288,
+          "center_x": 379.13330078125,
+          "center_y": 63.12895965576172,
+          "height": 32.452999114990234,
+          "width": 78.30445098876953
+        },
+        "xyxyxyxy": [
+          [
+            363.56640625,
+            102.54808807373047
+          ],
+          [
+            340.24560546875,
+            79.97957611083984
+          ],
+          [
+            394.7001953125,
+            23.70983123779297
+          ],
+          [
+            418.02099609375,
+            46.278343200683594
+          ]
+        ]
+      },
+      {
+        "angle_deg": 44.06,
+        "angle_rad": 0.7690062071509288,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 44.06,
+          "angle_rad": 0.7690062071509288,
+          "center_x": 143.13327026367188,
+          "center_y": 60.128963470458984,
+          "height": 32.452999114990234,
+          "width": 78.30445098876953
+        },
+        "xyxyxyxy": [
+          [
+            127.56637573242188,
+            99.54808807373047
+          ],
+          [
+            104.24557495117188,
+            76.97957611083984
+          ],
+          [
+            158.70016479492188,
+            20.7098388671875
+          ],
+          [
+            182.02096557617188,
+            43.278350830078125
+          ]
+        ]
+      },
+      {
+        "angle_deg": 44.06,
+        "angle_rad": 0.7690062071509288,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 44.06,
+          "angle_rad": 0.7690062071509288,
+          "center_x": 288.1332702636719,
+          "center_y": 58.128963470458984,
+          "height": 32.452999114990234,
+          "width": 78.30445098876953
+        },
+        "xyxyxyxy": [
+          [
+            272.5663757324219,
+            97.54808807373047
+          ],
+          [
+            249.24557495117188,
+            74.97957611083984
+          ],
+          [
+            303.7001647949219,
+            18.7098388671875
+          ],
+          [
+            327.0209655761719,
+            41.278350830078125
+          ]
+        ]
+      },
+      {
+        "angle_deg": 44.06,
+        "angle_rad": 0.7690062071509288,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 44.06,
+          "angle_rad": 0.7690062071509288,
+          "center_x": 242.13327026367188,
+          "center_y": 57.12895965576172,
+          "height": 32.452999114990234,
+          "width": 78.30445098876953
+        },
+        "xyxyxyxy": [
+          [
+            226.56637573242188,
+            96.54808807373047
+          ],
+          [
+            203.24557495117188,
+            73.97957611083984
+          ],
+          [
+            257.7001647949219,
+            17.70983123779297
+          ],
+          [
+            281.0209655761719,
+            40.278343200683594
+          ]
+        ]
+      },
+      {
+        "angle_deg": 44.06,
+        "angle_rad": 0.7690062071509288,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 44.06,
+          "angle_rad": 0.7690062071509288,
+          "center_x": 194.13327026367188,
+          "center_y": 57.12895965576172,
+          "height": 32.452999114990234,
+          "width": 78.30445098876953
+        },
+        "xyxyxyxy": [
+          [
+            178.56637573242188,
+            96.54808807373047
+          ],
+          [
+            155.24557495117188,
+            73.97957611083984
+          ],
+          [
+            209.70016479492188,
+            17.70983123779297
+          ],
+          [
+            233.02096557617188,
+            40.278343200683594
+          ]
+        ]
+      },
+      {
+        "angle_deg": 44.06,
+        "angle_rad": 0.7690062071509288,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 44.06,
+          "angle_rad": 0.7690062071509288,
+          "center_x": 103.13327026367188,
+          "center_y": 52.12895965576172,
+          "height": 32.452999114990234,
+          "width": 78.30445098876953
+        },
+        "xyxyxyxy": [
+          [
+            87.56637573242188,
+            91.54808807373047
+          ],
+          [
+            64.24557495117188,
+            68.97957611083984
+          ],
+          [
+            118.70016479492188,
+            12.709831237792969
+          ],
+          [
+            142.02096557617188,
+            35.278343200683594
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1282.5,
+          "center_y": 891,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1298,
+            923
+          ],
+          [
+            1267,
+            923
+          ],
+          [
+            1267,
+            859
+          ],
+          [
+            1298,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1248.5,
+          "center_y": 891,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1264,
+            923
+          ],
+          [
+            1233,
+            923
+          ],
+          [
+            1233,
+            859
+          ],
+          [
+            1264,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1186.5,
+          "center_y": 891,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1202,
+            923
+          ],
+          [
+            1171,
+            923
+          ],
+          [
+            1171,
+            859
+          ],
+          [
+            1202,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1152.5,
+          "center_y": 891,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1168,
+            923
+          ],
+          [
+            1137,
+            923
+          ],
+          [
+            1137,
+            859
+          ],
+          [
+            1168,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1118.5,
+          "center_y": 891,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1134,
+            923
+          ],
+          [
+            1103,
+            923
+          ],
+          [
+            1103,
+            859
+          ],
+          [
+            1134,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1052.5,
+          "center_y": 891,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1068,
+            923
+          ],
+          [
+            1037,
+            923
+          ],
+          [
+            1037,
+            859
+          ],
+          [
+            1068,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1018.5,
+          "center_y": 891,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1034,
+            923
+          ],
+          [
+            1003,
+            923
+          ],
+          [
+            1003,
+            859
+          ],
+          [
+            1034,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 984.5,
+          "center_y": 891,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1000,
+            923
+          ],
+          [
+            969,
+            923
+          ],
+          [
+            969,
+            859
+          ],
+          [
+            1000,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 907.5,
+          "center_y": 891,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            923,
+            923
+          ],
+          [
+            892,
+            923
+          ],
+          [
+            892,
+            859
+          ],
+          [
+            923,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 873.5,
+          "center_y": 891,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            889,
+            923
+          ],
+          [
+            858,
+            923
+          ],
+          [
+            858,
+            859
+          ],
+          [
+            889,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 787.5,
+          "center_y": 891,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            803,
+            923
+          ],
+          [
+            772,
+            923
+          ],
+          [
+            772,
+            859
+          ],
+          [
+            803,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 734.5,
+          "center_y": 891,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            750,
+            923
+          ],
+          [
+            719,
+            923
+          ],
+          [
+            719,
+            859
+          ],
+          [
+            750,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 83.5,
+          "center_y": 750,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            99,
+            782
+          ],
+          [
+            68,
+            782
+          ],
+          [
+            68,
+            718
+          ],
+          [
+            99,
+            718
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 49.5,
+          "center_y": 750,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            65,
+            782
+          ],
+          [
+            34,
+            782
+          ],
+          [
+            34,
+            718
+          ],
+          [
+            65,
+            718
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 726.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            742
+          ],
+          [
+            1371,
+            742
+          ],
+          [
+            1371,
+            711
+          ],
+          [
+            1435,
+            711
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1184.5,
+          "center_y": 739,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1200,
+            771
+          ],
+          [
+            1169,
+            771
+          ],
+          [
+            1169,
+            707
+          ],
+          [
+            1200,
+            707
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1150.5,
+          "center_y": 739,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1166,
+            771
+          ],
+          [
+            1135,
+            771
+          ],
+          [
+            1135,
+            707
+          ],
+          [
+            1166,
+            707
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1116.5,
+          "center_y": 739,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1132,
+            771
+          ],
+          [
+            1101,
+            771
+          ],
+          [
+            1101,
+            707
+          ],
+          [
+            1132,
+            707
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1051.5,
+          "center_y": 739,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1067,
+            771
+          ],
+          [
+            1036,
+            771
+          ],
+          [
+            1036,
+            707
+          ],
+          [
+            1067,
+            707
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1017.5,
+          "center_y": 739,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1033,
+            771
+          ],
+          [
+            1002,
+            771
+          ],
+          [
+            1002,
+            707
+          ],
+          [
+            1033,
+            707
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 983.5,
+          "center_y": 739,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            999,
+            771
+          ],
+          [
+            968,
+            771
+          ],
+          [
+            968,
+            707
+          ],
+          [
+            999,
+            707
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 654.5,
+          "center_y": 739,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            670,
+            771
+          ],
+          [
+            639,
+            771
+          ],
+          [
+            639,
+            707
+          ],
+          [
+            670,
+            707
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 393.5,
+          "center_y": 739,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            409,
+            771
+          ],
+          [
+            378,
+            771
+          ],
+          [
+            378,
+            707
+          ],
+          [
+            409,
+            707
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 251.5,
+          "center_y": 739,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            267,
+            771
+          ],
+          [
+            236,
+            771
+          ],
+          [
+            236,
+            707
+          ],
+          [
+            267,
+            707
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 217.5,
+          "center_y": 739,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            233,
+            771
+          ],
+          [
+            202,
+            771
+          ],
+          [
+            202,
+            707
+          ],
+          [
+            233,
+            707
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 183.5,
+          "center_y": 739,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            199,
+            771
+          ],
+          [
+            168,
+            771
+          ],
+          [
+            168,
+            707
+          ],
+          [
+            199,
+            707
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 692.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            708
+          ],
+          [
+            1371,
+            708
+          ],
+          [
+            1371,
+            677
+          ],
+          [
+            1435,
+            677
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 658.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            674
+          ],
+          [
+            1371,
+            674
+          ],
+          [
+            1371,
+            643
+          ],
+          [
+            1435,
+            643
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1184.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1200,
+            704
+          ],
+          [
+            1169,
+            704
+          ],
+          [
+            1169,
+            640
+          ],
+          [
+            1200,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1150.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1166,
+            704
+          ],
+          [
+            1135,
+            704
+          ],
+          [
+            1135,
+            640
+          ],
+          [
+            1166,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1116.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1132,
+            704
+          ],
+          [
+            1101,
+            704
+          ],
+          [
+            1101,
+            640
+          ],
+          [
+            1132,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1051.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1067,
+            704
+          ],
+          [
+            1036,
+            704
+          ],
+          [
+            1036,
+            640
+          ],
+          [
+            1067,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1017.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1033,
+            704
+          ],
+          [
+            1002,
+            704
+          ],
+          [
+            1002,
+            640
+          ],
+          [
+            1033,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 983.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            999,
+            704
+          ],
+          [
+            968,
+            704
+          ],
+          [
+            968,
+            640
+          ],
+          [
+            999,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 654.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            670,
+            704
+          ],
+          [
+            639,
+            704
+          ],
+          [
+            639,
+            640
+          ],
+          [
+            670,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 518.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            534,
+            704
+          ],
+          [
+            503,
+            704
+          ],
+          [
+            503,
+            640
+          ],
+          [
+            534,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 484.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            500,
+            704
+          ],
+          [
+            469,
+            704
+          ],
+          [
+            469,
+            640
+          ],
+          [
+            500,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 450.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            466,
+            704
+          ],
+          [
+            435,
+            704
+          ],
+          [
+            435,
+            640
+          ],
+          [
+            466,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 393.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            409,
+            704
+          ],
+          [
+            378,
+            704
+          ],
+          [
+            378,
+            640
+          ],
+          [
+            409,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 251.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            267,
+            704
+          ],
+          [
+            236,
+            704
+          ],
+          [
+            236,
+            640
+          ],
+          [
+            267,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 217.5,
+          "center_y": 672,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            233,
+            704
+          ],
+          [
+            202,
+            704
+          ],
+          [
+            202,
+            640
+          ],
+          [
+            233,
+            640
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 498.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            514
+          ],
+          [
+            1371,
+            514
+          ],
+          [
+            1371,
+            483
+          ],
+          [
+            1435,
+            483
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 251.5,
+          "center_y": 503,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            267,
+            535
+          ],
+          [
+            236,
+            535
+          ],
+          [
+            236,
+            471
+          ],
+          [
+            267,
+            471
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 217.5,
+          "center_y": 503,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            233,
+            535
+          ],
+          [
+            202,
+            535
+          ],
+          [
+            202,
+            471
+          ],
+          [
+            233,
+            471
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 183.5,
+          "center_y": 503,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            199,
+            535
+          ],
+          [
+            168,
+            535
+          ],
+          [
+            168,
+            471
+          ],
+          [
+            199,
+            471
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 118.5,
+          "center_y": 503,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            134,
+            535
+          ],
+          [
+            103,
+            535
+          ],
+          [
+            103,
+            471
+          ],
+          [
+            134,
+            471
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 84.5,
+          "center_y": 503,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            100,
+            535
+          ],
+          [
+            69,
+            535
+          ],
+          [
+            69,
+            471
+          ],
+          [
+            100,
+            471
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 50.5,
+          "center_y": 503,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            66,
+            535
+          ],
+          [
+            35,
+            535
+          ],
+          [
+            35,
+            471
+          ],
+          [
+            66,
+            471
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1184.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1200,
+            531
+          ],
+          [
+            1169,
+            531
+          ],
+          [
+            1169,
+            467
+          ],
+          [
+            1200,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1150.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1166,
+            531
+          ],
+          [
+            1135,
+            531
+          ],
+          [
+            1135,
+            467
+          ],
+          [
+            1166,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1116.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1132,
+            531
+          ],
+          [
+            1101,
+            531
+          ],
+          [
+            1101,
+            467
+          ],
+          [
+            1132,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1051.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1067,
+            531
+          ],
+          [
+            1036,
+            531
+          ],
+          [
+            1036,
+            467
+          ],
+          [
+            1067,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1017.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1033,
+            531
+          ],
+          [
+            1002,
+            531
+          ],
+          [
+            1002,
+            467
+          ],
+          [
+            1033,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 983.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            999,
+            531
+          ],
+          [
+            968,
+            531
+          ],
+          [
+            968,
+            467
+          ],
+          [
+            999,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 918.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            934,
+            531
+          ],
+          [
+            903,
+            531
+          ],
+          [
+            903,
+            467
+          ],
+          [
+            934,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 884.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            900,
+            531
+          ],
+          [
+            869,
+            531
+          ],
+          [
+            869,
+            467
+          ],
+          [
+            900,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 785.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            801,
+            531
+          ],
+          [
+            770,
+            531
+          ],
+          [
+            770,
+            467
+          ],
+          [
+            801,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 751.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            767,
+            531
+          ],
+          [
+            736,
+            531
+          ],
+          [
+            736,
+            467
+          ],
+          [
+            767,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 717.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            733,
+            531
+          ],
+          [
+            702,
+            531
+          ],
+          [
+            702,
+            467
+          ],
+          [
+            733,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 654.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            670,
+            531
+          ],
+          [
+            639,
+            531
+          ],
+          [
+            639,
+            467
+          ],
+          [
+            670,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 620.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            636,
+            531
+          ],
+          [
+            605,
+            531
+          ],
+          [
+            605,
+            467
+          ],
+          [
+            636,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 518.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            534,
+            531
+          ],
+          [
+            503,
+            531
+          ],
+          [
+            503,
+            467
+          ],
+          [
+            534,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 484.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            500,
+            531
+          ],
+          [
+            469,
+            531
+          ],
+          [
+            469,
+            467
+          ],
+          [
+            500,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 450.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            466,
+            531
+          ],
+          [
+            435,
+            531
+          ],
+          [
+            435,
+            467
+          ],
+          [
+            466,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 393.5,
+          "center_y": 499,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            409,
+            531
+          ],
+          [
+            378,
+            531
+          ],
+          [
+            378,
+            467
+          ],
+          [
+            409,
+            467
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 464.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            480
+          ],
+          [
+            1371,
+            480
+          ],
+          [
+            1371,
+            449
+          ],
+          [
+            1435,
+            449
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 430.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            446
+          ],
+          [
+            1371,
+            446
+          ],
+          [
+            1371,
+            415
+          ],
+          [
+            1435,
+            415
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 251.5,
+          "center_y": 436,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            267,
+            468
+          ],
+          [
+            236,
+            468
+          ],
+          [
+            236,
+            404
+          ],
+          [
+            267,
+            404
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 217.5,
+          "center_y": 436,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            233,
+            468
+          ],
+          [
+            202,
+            468
+          ],
+          [
+            202,
+            404
+          ],
+          [
+            233,
+            404
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 183.5,
+          "center_y": 436,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            199,
+            468
+          ],
+          [
+            168,
+            468
+          ],
+          [
+            168,
+            404
+          ],
+          [
+            199,
+            404
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 118.5,
+          "center_y": 436,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            134,
+            468
+          ],
+          [
+            103,
+            468
+          ],
+          [
+            103,
+            404
+          ],
+          [
+            134,
+            404
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 84.5,
+          "center_y": 436,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            100,
+            468
+          ],
+          [
+            69,
+            468
+          ],
+          [
+            69,
+            404
+          ],
+          [
+            100,
+            404
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1184.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1200,
+            464
+          ],
+          [
+            1169,
+            464
+          ],
+          [
+            1169,
+            400
+          ],
+          [
+            1200,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1150.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1166,
+            464
+          ],
+          [
+            1135,
+            464
+          ],
+          [
+            1135,
+            400
+          ],
+          [
+            1166,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1116.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1132,
+            464
+          ],
+          [
+            1101,
+            464
+          ],
+          [
+            1101,
+            400
+          ],
+          [
+            1132,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1051.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1067,
+            464
+          ],
+          [
+            1036,
+            464
+          ],
+          [
+            1036,
+            400
+          ],
+          [
+            1067,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1017.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1033,
+            464
+          ],
+          [
+            1002,
+            464
+          ],
+          [
+            1002,
+            400
+          ],
+          [
+            1033,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 785.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            801,
+            464
+          ],
+          [
+            770,
+            464
+          ],
+          [
+            770,
+            400
+          ],
+          [
+            801,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 751.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            767,
+            464
+          ],
+          [
+            736,
+            464
+          ],
+          [
+            736,
+            400
+          ],
+          [
+            767,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 717.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            733,
+            464
+          ],
+          [
+            702,
+            464
+          ],
+          [
+            702,
+            400
+          ],
+          [
+            733,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 654.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            670,
+            464
+          ],
+          [
+            639,
+            464
+          ],
+          [
+            639,
+            400
+          ],
+          [
+            670,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 620.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            636,
+            464
+          ],
+          [
+            605,
+            464
+          ],
+          [
+            605,
+            400
+          ],
+          [
+            636,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 518.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            534,
+            464
+          ],
+          [
+            503,
+            464
+          ],
+          [
+            503,
+            400
+          ],
+          [
+            534,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 484.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            500,
+            464
+          ],
+          [
+            469,
+            464
+          ],
+          [
+            469,
+            400
+          ],
+          [
+            500,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 450.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            466,
+            464
+          ],
+          [
+            435,
+            464
+          ],
+          [
+            435,
+            400
+          ],
+          [
+            466,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 393.5,
+          "center_y": 432,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            409,
+            464
+          ],
+          [
+            378,
+            464
+          ],
+          [
+            378,
+            400
+          ],
+          [
+            409,
+            400
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 384.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            400
+          ],
+          [
+            1371,
+            400
+          ],
+          [
+            1371,
+            369
+          ],
+          [
+            1435,
+            369
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 350.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            366
+          ],
+          [
+            1371,
+            366
+          ],
+          [
+            1371,
+            335
+          ],
+          [
+            1435,
+            335
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 316.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            332
+          ],
+          [
+            1371,
+            332
+          ],
+          [
+            1371,
+            301
+          ],
+          [
+            1435,
+            301
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 893,
+          "center_y": 300.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            925,
+            316
+          ],
+          [
+            861,
+            316
+          ],
+          [
+            861,
+            285
+          ],
+          [
+            925,
+            285
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 268.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            284
+          ],
+          [
+            1371,
+            284
+          ],
+          [
+            1371,
+            253
+          ],
+          [
+            1435,
+            253
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 118.5,
+          "center_y": 276,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            134,
+            308
+          ],
+          [
+            103,
+            308
+          ],
+          [
+            103,
+            244
+          ],
+          [
+            134,
+            244
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 84.5,
+          "center_y": 276,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            100,
+            308
+          ],
+          [
+            69,
+            308
+          ],
+          [
+            69,
+            244
+          ],
+          [
+            100,
+            244
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 251.5,
+          "center_y": 275,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            267,
+            307
+          ],
+          [
+            236,
+            307
+          ],
+          [
+            236,
+            243
+          ],
+          [
+            267,
+            243
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 217.5,
+          "center_y": 275,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            233,
+            307
+          ],
+          [
+            202,
+            307
+          ],
+          [
+            202,
+            243
+          ],
+          [
+            233,
+            243
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 183.5,
+          "center_y": 275,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            199,
+            307
+          ],
+          [
+            168,
+            307
+          ],
+          [
+            168,
+            243
+          ],
+          [
+            199,
+            243
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1184.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1200,
+            302
+          ],
+          [
+            1169,
+            302
+          ],
+          [
+            1169,
+            238
+          ],
+          [
+            1200,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1150.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1166,
+            302
+          ],
+          [
+            1135,
+            302
+          ],
+          [
+            1135,
+            238
+          ],
+          [
+            1166,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1116.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1132,
+            302
+          ],
+          [
+            1101,
+            302
+          ],
+          [
+            1101,
+            238
+          ],
+          [
+            1132,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1051.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1067,
+            302
+          ],
+          [
+            1036,
+            302
+          ],
+          [
+            1036,
+            238
+          ],
+          [
+            1067,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1017.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1033,
+            302
+          ],
+          [
+            1002,
+            302
+          ],
+          [
+            1002,
+            238
+          ],
+          [
+            1033,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 983.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            999,
+            302
+          ],
+          [
+            968,
+            302
+          ],
+          [
+            968,
+            238
+          ],
+          [
+            999,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 785.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            801,
+            302
+          ],
+          [
+            770,
+            302
+          ],
+          [
+            770,
+            238
+          ],
+          [
+            801,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 751.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            767,
+            302
+          ],
+          [
+            736,
+            302
+          ],
+          [
+            736,
+            238
+          ],
+          [
+            767,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 717.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            733,
+            302
+          ],
+          [
+            702,
+            302
+          ],
+          [
+            702,
+            238
+          ],
+          [
+            733,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 654.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            670,
+            302
+          ],
+          [
+            639,
+            302
+          ],
+          [
+            639,
+            238
+          ],
+          [
+            670,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 620.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            636,
+            302
+          ],
+          [
+            605,
+            302
+          ],
+          [
+            605,
+            238
+          ],
+          [
+            636,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 518.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            534,
+            302
+          ],
+          [
+            503,
+            302
+          ],
+          [
+            503,
+            238
+          ],
+          [
+            534,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 484.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            500,
+            302
+          ],
+          [
+            469,
+            302
+          ],
+          [
+            469,
+            238
+          ],
+          [
+            500,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 450.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            466,
+            302
+          ],
+          [
+            435,
+            302
+          ],
+          [
+            435,
+            238
+          ],
+          [
+            466,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 393.5,
+          "center_y": 270,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            409,
+            302
+          ],
+          [
+            378,
+            302
+          ],
+          [
+            378,
+            238
+          ],
+          [
+            409,
+            238
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 234.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            250
+          ],
+          [
+            1371,
+            250
+          ],
+          [
+            1371,
+            219
+          ],
+          [
+            1435,
+            219
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 235,
+          "center_y": 224.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            267,
+            240
+          ],
+          [
+            203,
+            240
+          ],
+          [
+            203,
+            209
+          ],
+          [
+            267,
+            209
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 200.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            216
+          ],
+          [
+            1371,
+            216
+          ],
+          [
+            1371,
+            185
+          ],
+          [
+            1435,
+            185
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 235,
+          "center_y": 190.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            267,
+            206
+          ],
+          [
+            203,
+            206
+          ],
+          [
+            203,
+            175
+          ],
+          [
+            267,
+            175
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1184.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1200,
+            235
+          ],
+          [
+            1169,
+            235
+          ],
+          [
+            1169,
+            171
+          ],
+          [
+            1200,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1150.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1166,
+            235
+          ],
+          [
+            1135,
+            235
+          ],
+          [
+            1135,
+            171
+          ],
+          [
+            1166,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1116.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1132,
+            235
+          ],
+          [
+            1101,
+            235
+          ],
+          [
+            1101,
+            171
+          ],
+          [
+            1132,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1051.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1067,
+            235
+          ],
+          [
+            1036,
+            235
+          ],
+          [
+            1036,
+            171
+          ],
+          [
+            1067,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1017.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1033,
+            235
+          ],
+          [
+            1002,
+            235
+          ],
+          [
+            1002,
+            171
+          ],
+          [
+            1033,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 983.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            999,
+            235
+          ],
+          [
+            968,
+            235
+          ],
+          [
+            968,
+            171
+          ],
+          [
+            999,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 926.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            942,
+            235
+          ],
+          [
+            911,
+            235
+          ],
+          [
+            911,
+            171
+          ],
+          [
+            942,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 892.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            908,
+            235
+          ],
+          [
+            877,
+            235
+          ],
+          [
+            877,
+            171
+          ],
+          [
+            908,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 858.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            874,
+            235
+          ],
+          [
+            843,
+            235
+          ],
+          [
+            843,
+            171
+          ],
+          [
+            874,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 785.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            801,
+            235
+          ],
+          [
+            770,
+            235
+          ],
+          [
+            770,
+            171
+          ],
+          [
+            801,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 751.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            767,
+            235
+          ],
+          [
+            736,
+            235
+          ],
+          [
+            736,
+            171
+          ],
+          [
+            767,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 717.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            733,
+            235
+          ],
+          [
+            702,
+            235
+          ],
+          [
+            702,
+            171
+          ],
+          [
+            733,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 654.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            670,
+            235
+          ],
+          [
+            639,
+            235
+          ],
+          [
+            639,
+            171
+          ],
+          [
+            670,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 620.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            636,
+            235
+          ],
+          [
+            605,
+            235
+          ],
+          [
+            605,
+            171
+          ],
+          [
+            636,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 518.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            534,
+            235
+          ],
+          [
+            503,
+            235
+          ],
+          [
+            503,
+            171
+          ],
+          [
+            534,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 484.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            500,
+            235
+          ],
+          [
+            469,
+            235
+          ],
+          [
+            469,
+            171
+          ],
+          [
+            500,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 450.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            466,
+            235
+          ],
+          [
+            435,
+            235
+          ],
+          [
+            435,
+            171
+          ],
+          [
+            466,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 393.5,
+          "center_y": 203,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            409,
+            235
+          ],
+          [
+            378,
+            235
+          ],
+          [
+            378,
+            171
+          ],
+          [
+            409,
+            171
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1402,
+          "center_y": 147.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1434,
+            163
+          ],
+          [
+            1370,
+            163
+          ],
+          [
+            1370,
+            132
+          ],
+          [
+            1434,
+            132
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1403,
+          "center_y": 107.5,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1435,
+            123
+          ],
+          [
+            1371,
+            123
+          ],
+          [
+            1371,
+            92
+          ],
+          [
+            1435,
+            92
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1322.5,
+          "center_y": 43,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1338,
+            75
+          ],
+          [
+            1307,
+            75
+          ],
+          [
+            1307,
+            11
+          ],
+          [
+            1338,
+            11
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1288.5,
+          "center_y": 43,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1304,
+            75
+          ],
+          [
+            1273,
+            75
+          ],
+          [
+            1273,
+            11
+          ],
+          [
+            1304,
+            11
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1254.5,
+          "center_y": 43,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1270,
+            75
+          ],
+          [
+            1239,
+            75
+          ],
+          [
+            1239,
+            11
+          ],
+          [
+            1270,
+            11
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1190.5,
+          "center_y": 43,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1206,
+            75
+          ],
+          [
+            1175,
+            75
+          ],
+          [
+            1175,
+            11
+          ],
+          [
+            1206,
+            11
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1156.5,
+          "center_y": 43,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1172,
+            75
+          ],
+          [
+            1141,
+            75
+          ],
+          [
+            1141,
+            11
+          ],
+          [
+            1172,
+            11
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1122.5,
+          "center_y": 43,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1138,
+            75
+          ],
+          [
+            1107,
+            75
+          ],
+          [
+            1107,
+            11
+          ],
+          [
+            1138,
+            11
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1058.5,
+          "center_y": 43,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1074,
+            75
+          ],
+          [
+            1043,
+            75
+          ],
+          [
+            1043,
+            11
+          ],
+          [
+            1074,
+            11
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 1024.5,
+          "center_y": 43,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1040,
+            75
+          ],
+          [
+            1009,
+            75
+          ],
+          [
+            1009,
+            11
+          ],
+          [
+            1040,
+            11
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 990.5,
+          "center_y": 43,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            1006,
+            75
+          ],
+          [
+            975,
+            75
+          ],
+          [
+            975,
+            11
+          ],
+          [
+            1006,
+            11
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 922.5,
+          "center_y": 43,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            938,
+            75
+          ],
+          [
+            907,
+            75
+          ],
+          [
+            907,
+            11
+          ],
+          [
+            938,
+            11
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 888.5,
+          "center_y": 43,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            904,
+            75
+          ],
+          [
+            873,
+            75
+          ],
+          [
+            873,
+            11
+          ],
+          [
+            904,
+            11
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 854.5,
+          "center_y": 43,
+          "height": 31,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            870,
+            75
+          ],
+          [
+            839,
+            75
+          ],
+          [
+            839,
+            11
+          ],
+          [
+            870,
+            11
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 846.5,
+          "center_y": 891,
+          "height": 15,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            854,
+            923
+          ],
+          [
+            839,
+            923
+          ],
+          [
+            839,
+            859
+          ],
+          [
+            854,
+            859
+          ]
+        ]
+      },
+      {
+        "angle_deg": 0,
+        "angle_rad": 0,
+        "class": 0,
+        "class_name": "blue_rect",
+        "confidence": 1,
+        "xywhr": {
+          "angle_deg": 0,
+          "angle_rad": 0,
+          "center_x": 760.5,
+          "center_y": 891,
+          "height": 15,
+          "width": 64
+        },
+        "xyxyxyxy": [
+          [
+            768,
+            923
+          ],
+          [
+            753,
+            923
+          ],
+          [
+            753,
+            859
+          ],
+          [
+            768,
+            859
+          ]
+        ]
+      }
+    ],
+    "image_size": {
+      "height": 974,
+      "width": 1455
+    },
+    "source": "upload"
+  }
+]
