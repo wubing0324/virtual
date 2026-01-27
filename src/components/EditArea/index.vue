@@ -39,35 +39,44 @@
               
               <!-- 识别通过控制面板 -->
               <div class="recognition-controls">
+                <div class="panel-header" @click="recognitionControlsCollapsed = !recognitionControlsCollapsed">
+                  <span class="panel-title">识别设置</span>
+                  <span class="panel-toggle">
+                    {{ recognitionControlsCollapsed ? '▼' : '▲' }}
+                  </span>
+                </div>
+                <transition name="slide">
+                  <div v-show="!recognitionControlsCollapsed" class="panel-content">
                 <div class="control-group">
-                   <label>边框颜色</label>
-                   <select v-model="recognitionConfig.borderColor" class="config-select">
-                      <option value="blue">蓝色 (Blue)</option>
-                      <option value="red">红色 (Red)</option>
-                      <option value="green">绿色 (Green)</option>
-                      <option value="white">白色 (White)</option>
-                   </select>
+                  <label>边框颜色（图片中边框的颜色）</label>
+                  <select v-model="recognitionConfig.borderColor" class="config-select">
+                    <option value="blue">蓝色 (Blue)</option>
+                    <option value="red">红色 (Red)</option>
+                    <option value="green">绿色 (Green)</option>
+                    <option value="white">白色 (White)</option>
+                  </select>
                 </div>
                 
                 <div class="control-group">
-                   <label>车位号 OCR</label>
-                   <select v-model="recognitionConfig.ocrEngine" class="config-select">
-                      <option value="">关闭</option>
-                      <option value="easy">EasyOCR（中英数）</option>
-                      <option value="paddle">PaddleOCR（中英数）</option>
-                   </select>
+                  <label>车位号识别</label>
+                  <select v-model="recognitionConfig.ocrEngine" class="config-select">
+                    <option value="">关闭</option>
+                    <option value="easy">EasyOCR</option>
+                    <option value="paddle">PaddleOCR</option>
+                  </select>
                 </div>
                 
                 <div class="control-group">
-                   <label>文字颜色</label>
-                   <select v-model="recognitionConfig.textColor" class="config-select">
-                      <option value="yellow">黄色</option>
-                      <option value="black">黑色</option>
-                      <option value="red">红色</option>
-                      <option value="white">白色</option>
-                      <option value="green">绿色</option>
-                   </select>
+                  <label>文字颜色（图片中车位号的颜色）</label>
+                  <select v-model="recognitionConfig.textColor" class="config-select">
+                    <option value="yellow">黄色</option>
+                    <option value="black">黑色</option>
+                    <option value="red">红色</option>
+                    <option value="white">白色</option>
+                    <option value="green">绿色</option>
+                  </select>
                 </div>
+                
                 
                 <button 
                   class="action-btn recognize-btn" 
@@ -78,8 +87,10 @@
                 </button>
                 
                 <div v-if="recognitionStatus" :class="['status-text', recognitionStatusType]">
-                   {{ recognitionStatus }}
+                  {{ recognitionStatus }}
                 </div>
+                  </div>
+                </transition>
               </div>
 
               <!-- 如果没有任何数据，显示加载模拟数据按钮 (作为备用) -->
@@ -93,6 +104,14 @@
               <!-- 识别结果列表 -->
               <div v-if="recognizedSpaces.length > 0" class="spaces-list">
                 <div class="filter-group">
+                  <div class="panel-header" @click="filterGroupCollapsed = !filterGroupCollapsed">
+                    <span class="panel-title">过滤与样式</span>
+                    <span class="panel-toggle">
+                      {{ filterGroupCollapsed ? '▼' : '▲' }}
+                    </span>
+                  </div>
+                  <transition name="slide">
+                    <div v-show="!filterGroupCollapsed" class="panel-content">
                   <div class="filter-item">
                     <label>最小面积: {{ filter.currentMin }}</label>
                     <input 
@@ -113,6 +132,65 @@
                       @input="onFilterChange"
                     >
                   </div>
+                  <div class="filter-item">
+                   <label>车位号颜色</label>
+                   <input 
+                     type="color" 
+                     v-model="recognitionConfig.textNumberColor"
+                     @input="onTextStyleChange"
+                     class="color-picker"
+                   >
+                </div>
+                  <div class="filter-item">
+                   <label>透明度: {{ Math.round(recognitionConfig.textNumberOpacity * 100) }}%</label>
+                   <input 
+                     type="range" 
+                     min="0" 
+                     max="1" 
+                     step="0.01"
+                     v-model.number="recognitionConfig.textNumberOpacity"
+                     @input="onTextStyleChange"
+                     class="opacity-slider"
+                   >
+                </div>
+                  <div class="filter-item">
+                   <label>字体大小: {{ recognitionConfig.textNumberFontSize }}px</label>
+                   <input 
+                     type="range" 
+                     min="8" 
+                     max="48" 
+                     step="1"
+                     v-model.number="recognitionConfig.textNumberFontSize"
+                     @input="onTextStyleChange"
+                     class="font-size-slider"
+                   >
+                </div>
+                  <div class="filter-item">
+                   <label>X偏移: {{ recognitionConfig.textNumberOffsetX }}px</label>
+                   <input 
+                     type="range" 
+                     min="-100" 
+                     max="100" 
+                     step="1"
+                     v-model.number="recognitionConfig.textNumberOffsetX"
+                     @input="onTextStyleChange"
+                     class="offset-slider"
+                   >
+                </div>
+                  <div class="filter-item">
+                   <label>Y偏移: {{ recognitionConfig.textNumberOffsetY }}px</label>
+                   <input 
+                     type="range" 
+                     min="-100" 
+                     max="100" 
+                     step="1"
+                     v-model.number="recognitionConfig.textNumberOffsetY"
+                     @input="onTextStyleChange"
+                     class="offset-slider"
+                   >
+                </div>
+                  </div>
+                </transition>
                 </div>
                 
                 <div class="list-header">
@@ -135,7 +213,7 @@
                       </div>
                       <div class="space-info">
                         <span>尺寸: {{ space.width.toFixed(2) }} × {{ space.height.toFixed(2) }}</span>
-                        <span v-if="space.angle">角度: {{ space.angle }}°</span>
+                        <span v-if="space.angle">角度: {{ space.angle.toFixed(2) }}°</span>
                       </div>
                     </div>
                   </div>
@@ -194,8 +272,13 @@ export default {
         borderColor: 'blue',
         imgsz: 640,
         conf: 0.25,
-        ocrEngine: '', // 车位号 OCR 引擎：空字符串表示关闭，'easy' 或 'paddle'
-        textColor: 'yellow' // 文字颜色：yellow/black/red/white/green
+        ocrEngine: 'paddle', // 车位号 OCR 引擎：空字符串表示关闭，'easy' 或 'paddle'
+        textColor: 'yellow', // 文字颜色：yellow/black/red/white/green（用于后端识别）
+        textNumberColor: '#000000', // 车位号文字颜色（用于前端显示）
+        textNumberOpacity: 1.0, // 车位号文字透明度（0-1）
+        textNumberFontSize: 18, // 车位号文字大小（px）
+        textNumberOffsetX: 0, // 车位号文字X偏移（px）
+        textNumberOffsetY: 0, // 车位号文字Y偏移（px）
       },
       
       // Filter State
@@ -207,12 +290,20 @@ export default {
           currentMax: 10000
       },
       filterTimer: null,
+      textStyleTimer: null, // 用于文字样式变化的防抖
+      
+      // 面板收起状态
+      recognitionControlsCollapsed: false,
+      filterGroupCollapsed: false,
     };
   },
   computed: {
     imageUrl() {
       return this.$store.state.uploadedImage;
     },
+  },
+  watch: {
+    // 注意：颜色和透明度的实时更新已改为通过 onTextStyleChange 防抖处理
   },
   mounted() {
     // 如果没有图片，重定向到上传页面
@@ -255,6 +346,9 @@ export default {
             alert("没有图片可识别");
             return;
         }
+        
+        // 清空之前的结果
+        this.clearPreviousResults();
         
         this.isRecognizing = true;
         this.recognitionStatus = "正在请求检测接口...";
@@ -306,6 +400,27 @@ export default {
         } finally {
             this.isRecognizing = false;
         }
+    },
+    
+    clearPreviousResults() {
+        // 清空画布上的车位对象
+        if (this.canvas) {
+            this.spaceFabricObjects.forEach(obj => {
+                this.canvas.remove(obj);
+                // 移除关联的文本对象
+                if (obj.parkingText) {
+                    this.canvas.remove(obj.parkingText);
+                }
+            });
+            this.spaceFabricObjects.clear();
+            this.canvas.renderAll();
+        }
+        
+        // 清空数据
+        this.recognizedSpaces = [];
+        this.allRecognizedSpaces = [];
+        this.selectedSpaceIndex = null;
+        this.selectedObject = null;
     },
 
     processBoxes(boxes) {
@@ -391,6 +506,45 @@ export default {
         this.filterTimer = setTimeout(() => {
             this.applyFilter();
         }, 300); // 300ms debounce
+    },
+    
+    onTextStyleChange() {
+        // 防抖处理文字样式变化（颜色和透明度）
+        if (this.textStyleTimer) clearTimeout(this.textStyleTimer);
+        this.textStyleTimer = setTimeout(() => {
+            this.updateTextStyles();
+        }, 300); // 300ms debounce
+    },
+    
+    updateTextStyles() {
+        if (!this.canvas) return;
+        
+        const color = this.recognitionConfig.textNumberColor || '#000000';
+        const opacity = this.recognitionConfig.textNumberOpacity !== undefined 
+            ? this.recognitionConfig.textNumberOpacity 
+            : 1.0;
+        const fontSize = this.recognitionConfig.textNumberFontSize || 18;
+        const offsetX = this.recognitionConfig.textNumberOffsetX || 0;
+        const offsetY = this.recognitionConfig.textNumberOffsetY || 0;
+        
+        const objects = this.canvas.getObjects();
+        objects.forEach(obj => {
+            // 如果对象有 parkingText 属性，更新其样式和位置
+            if (obj.parkingText && obj.parkingText.set) {
+                // 计算新的位置（基于车位对象的左上角 + 偏移）
+                const newLeft = obj.left + offsetX;
+                const newTop = obj.top + offsetY;
+                
+                obj.parkingText.set({
+                    fill: color,
+                    opacity: opacity,
+                    fontSize: fontSize,
+                    left: newLeft,
+                    top: newTop
+                });
+            }
+        });
+        this.canvas.renderAll();
     },
     
     applyFilter() {
@@ -549,11 +703,18 @@ export default {
           // 如果文本对象不存在，创建它
           if (!obj.parkingText) {
             const { Text } = require('fabric');
+            const fontSize = this.recognitionConfig.textNumberFontSize || 18;
+            const offsetX = this.recognitionConfig.textNumberOffsetX || 0;
+            const offsetY = this.recognitionConfig.textNumberOffsetY || 0;
+            
             const text = new Text(value, {
-              left: obj.left + 25,
-              top: obj.top + 10,
-              fontSize: 14,
-              fill: '#000000',
+              left: obj.left + offsetX,
+              top: obj.top + offsetY,
+              fontSize: fontSize,
+              fill: this.recognitionConfig.textNumberColor || '#000000',
+              opacity: this.recognitionConfig.textNumberOpacity !== undefined 
+                ? this.recognitionConfig.textNumberOpacity 
+                : 1.0,
               fontFamily: 'Arial',
               selectable: false,
               evented: false,
@@ -565,9 +726,11 @@ export default {
             // 监听矩形移动和旋转，同步更新文本位置
             const updateTextPosition = () => {
               if (obj.parkingText) {
+                const offsetX = this.recognitionConfig.textNumberOffsetX || 0;
+                const offsetY = this.recognitionConfig.textNumberOffsetY || 0;
                 obj.parkingText.set({
-                  left: obj.left + 25,
-                  top: obj.top + 10,
+                  left: obj.left + offsetX,
+                  top: obj.top + offsetY,
                   angle: obj.angle || 0,
                 });
                 this.canvas.renderAll();
@@ -581,8 +744,21 @@ export default {
               obj._parkingTextEventsBound = true;
             }
           } else {
-            // 更新现有文本内容
-            obj.parkingText.set('text', value);
+            // 更新现有文本内容、颜色、透明度、大小和位置
+            const fontSize = this.recognitionConfig.textNumberFontSize || 18;
+            const offsetX = this.recognitionConfig.textNumberOffsetX || 0;
+            const offsetY = this.recognitionConfig.textNumberOffsetY || 0;
+            
+            obj.parkingText.set({
+              text: value,
+              fill: this.recognitionConfig.textNumberColor || '#000000',
+              opacity: this.recognitionConfig.textNumberOpacity !== undefined 
+                ? this.recognitionConfig.textNumberOpacity 
+                : 1.0,
+              fontSize: fontSize,
+              left: obj.left + offsetX,
+              top: obj.top + offsetY
+            });
           }
         } else {
           // 如果车位号为空，删除文本标签
@@ -787,11 +963,18 @@ export default {
       // 如果有车位号，添加文本标签（作为矩形的一部分，跟随移动）
       let text = null;
       if (space.number) {
+        const fontSize = this.recognitionConfig.textNumberFontSize || 18;
+        const offsetX = this.recognitionConfig.textNumberOffsetX || 0;
+        const offsetY = this.recognitionConfig.textNumberOffsetY || 0;
+        
         text = new Text(space.number, {
-          left: space.x + 25,
-          top: space.y + 10,
-          fontSize: 14,
-          fill: '#000000',
+          left: space.x + offsetX,
+          top: space.y + offsetY,
+          fontSize: fontSize,
+          fill: this.recognitionConfig.textNumberColor || '#000000',
+          opacity: this.recognitionConfig.textNumberOpacity !== undefined 
+            ? this.recognitionConfig.textNumberOpacity 
+            : 1.0,
           fontFamily: 'Arial',
           selectable: false,
           evented: false,
@@ -807,9 +990,11 @@ export default {
         // 监听矩形移动，同步更新文本位置
         rect.on('moving', () => {
           if (text) {
+            const offsetX = this.recognitionConfig.textNumberOffsetX || 0;
+            const offsetY = this.recognitionConfig.textNumberOffsetY || 0;
             text.set({
-              left: rect.left + 25,
-              top: rect.top + 10,
+              left: rect.left + offsetX,
+              top: rect.top + offsetY,
             });
             this.canvas.renderAll();
           }
@@ -818,9 +1003,11 @@ export default {
         // 监听矩形旋转，同步更新文本
         rect.on('rotating', () => {
           if (text) {
+            const offsetX = this.recognitionConfig.textNumberOffsetX || 0;
+            const offsetY = this.recognitionConfig.textNumberOffsetY || 0;
             text.set({
-              left: rect.left + 25,
-              top: rect.top + 10,
+              left: rect.left + offsetX,
+              top: rect.top + offsetY,
               angle: rect.angle,
             });
             this.canvas.renderAll();
@@ -1036,9 +1223,41 @@ export default {
 }
 
 .recognition-controls {
-  padding: 10px;
   background: #f0f2f5;
   border-radius: 6px;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 12px 15px;
+  background: #e8eaed;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.panel-header:hover {
+  background: #dde0e4;
+}
+
+.panel-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.panel-toggle {
+  font-size: 12px;
+  color: #666;
+  transition: transform 0.2s;
+}
+
+.panel-content {
+  padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1106,7 +1325,7 @@ export default {
 }
 
 .spaces-list {
-  margin-top: 20px;
+  margin-top: 6px;
   border-top: 1px solid #eee;
   padding-top: 15px;
   /* Flex布局撑开剩余空间 */
@@ -1141,6 +1360,7 @@ export default {
   align-items: center;
   gap: 4px;
   transition: all 0.2s;
+  margin-top: 6px;
 }
 
 .sort-btn:hover {
@@ -1213,8 +1433,7 @@ export default {
 
 .space-info {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  gap: 14px;
   font-size: 12px;
   color: #666;
 }
@@ -1226,9 +1445,18 @@ export default {
 /* 响应式设计 */
 /* Filter Controls */
 .filter-group {
-    padding: 10px;
     background: #fcfcfc;
     border-bottom: 1px solid #eee;
+    overflow: hidden;
+}
+
+.filter-group .panel-header {
+    background: #f5f5f5;
+    padding: 10px 15px;
+}
+
+.filter-group .panel-content {
+    padding: 10px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -1245,6 +1473,44 @@ export default {
 }
 .filter-item input[type=range] {
     width: 100%;
+}
+
+.color-picker {
+    width: 100%;
+    height: 40px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.opacity-slider {
+    width: 100%;
+}
+
+.font-size-slider {
+    width: 100%;
+}
+
+.offset-slider {
+    width: 100%;
+}
+
+/* 收起/展开过渡动画 */
+.slide-enter-active, .slide-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.slide-enter, .slide-leave-to {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.slide-enter-to, .slide-leave {
+  max-height: 1000px;
+  opacity: 1;
 }
 
 @media (max-width: 768px) {
