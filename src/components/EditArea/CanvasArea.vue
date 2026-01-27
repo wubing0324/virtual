@@ -1,6 +1,12 @@
 <template>
   <div class="canvas-area">
-    <div class="area-header">画布区域 (A区)</div>
+    <div class="area-header">
+      <span>画布区域 (A区)</span>
+      <button class="select-btn" @click="selectImage">
+        <span class="icon">↻</span>
+        <span class="text">重新选择图片</span>
+      </button>
+    </div>
     <div ref="canvasContainer" class="canvas-container">
       <canvas ref="fabricCanvas" class="fabric-canvas"></canvas>
     </div>
@@ -60,6 +66,9 @@ export default {
     }
   },
   methods: {
+    selectImage() {
+      window.location.href = '/';
+    },
     async initCanvas() {
       await this.$nextTick();
       const canvasEl = this.$refs.fabricCanvas;
@@ -411,11 +420,42 @@ export default {
 }
 
 .area-header {
-  padding: 15px;
+  padding: 12px 15px;
   background: #f8f9fa;
   border-bottom: 1px solid #ddd;
   font-weight: bold;
   font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #4CAF50;
+  background: #ffffff;
+  color: #4CAF50;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.select-btn:hover {
+  background: #4CAF50;
+  color: #ffffff;
+}
+
+.select-btn .icon {
+  font-size: 12px;
+}
+
+.select-btn .text {
+  white-space: nowrap;
 }
 
 .canvas-container {

@@ -13,7 +13,8 @@
 
       <!-- B区：工具面板和编辑面板 -->
       <div class="area-b">
-        <div class="area-header">工具面板 (B区)</div>
+        <div class="area-header">工具面板 (B区)
+        </div>
         
         <!-- Tab 切换 -->
         <div class="tab-container">
