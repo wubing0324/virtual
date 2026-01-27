@@ -54,6 +54,14 @@ export const routes = [
       title: 'json2绘制',
     },
   },
+  {
+    path: '/parking-obb',
+    name: 'ParkingOBB',
+    component: () => import('@/components/ParkingOBB/index.vue'),
+    meta: {
+      title: 'OBB结果',
+    },
+  },
 ];
 
 const router = new VueRouter({

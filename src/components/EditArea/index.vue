@@ -36,10 +36,14 @@
           <div class="tab-content">
             <!-- 车位识别 Tab -->
             <div v-show="activeTab === 'recognize'" class="tab-panel recognize-panel">
-              <ParkingSpaceRecognizer
-                ref="recognizer"
-                @spaces-recognized="handleSpacesRecognized"
-              />
+              
+              <!-- 如果没有任何数据，显示加载按钮 -->
+              <div v-if="recognizedSpaces.length === 0" class="empty-state">
+                <div class="empty-text">暂无识别数据</div>
+                <button class="action-btn" @click="loadSimulationData">
+                  加载最新的识别结果
+                </button>
+              </div>
               
               <!-- 识别结果列表 -->
               <div v-if="recognizedSpaces.length > 0" class="spaces-list">
@@ -97,7 +101,6 @@
 import CanvasArea from './CanvasArea.vue';
 import ShapeLibrary from './ShapeLibrary.vue';
 import EditPanel from './EditPanel.vue';
-import ParkingSpaceRecognizer from './ParkingSpaceRecognizer.vue';
 
 export default {
   name: 'EditArea',
@@ -105,7 +108,6 @@ export default {
     CanvasArea,
     ShapeLibrary,
     EditPanel,
-    ParkingSpaceRecognizer,
   },
   data() {
     return {
@@ -129,6 +131,119 @@ export default {
     }
   },
   methods: {
+    // 加载模拟数据
+    loadSimulationData() {
+      try {
+        const obbData = require('@/assets/const/obb-result-2026-01-26-06-59-28.json');
+        if (obbData && obbData.length > 0) {
+           const dataItem = obbData[0];
+           if (dataItem && dataItem.boxes) {
+              const spaces = dataItem.boxes.map((box, index) => {
+                // Use vertices to calculate robust geometry for Fabric.js
+                // JSON xywhr can be ambiguous about which side is width vs height relative to angle
+                const points = box.xyxyxyxy;
+                
+                // 1. Calculate Center
+                let sumX = 0, sumY = 0;
+                points.forEach(p => { sumX += p[0]; sumY += p[1]; });
+                const centerX = sumX / 4;
+                const centerY = sumY / 4;
+
+                // 2. Calculate edge lengths and angles
+                const p0 = points[0];
+                const p1 = points[1];
+                const p2 = points[2];
+                
+                // Edge 0: P0 -> P1
+                const dx1 = p1[0] - p0[0];
+                const dy1 = p1[1] - p0[1];
+                const len1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+                const angle1 = Math.atan2(dy1, dx1) * 180 / Math.PI;
+
+                // Edge 1: P1 -> P2
+                const dx2 = p2[0] - p1[0];
+                const dy2 = p2[1] - p1[1];
+                const len2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                const angle2 = Math.atan2(dy2, dx2) * 180 / Math.PI;
+                
+                // 3. Determine Width/Height/Angle
+                // Strategy: Prefer the longer side as "Width" (Horizontal-ish visual preference)
+                let width, height, angle;
+                
+                if (len1 > len2) {
+                   width = len1;
+                   height = len2;
+                   angle = angle1;
+                } else {
+                   width = len2;
+                   height = len1;
+                   angle = angle2;
+                }
+                
+                return {
+                  id: `space_${Date.now()}_${index}`,
+                  x: centerX, 
+                  y: centerY,
+                  centerX: centerX,
+                  centerY: centerY,
+                  width: width,
+                  height: height,
+                  angle: angle,
+                  rotation: angle,
+                  // These force createParkingSpace to use the precise dimensions
+                  rotatedWidth: width, 
+                  rotatedHeight: height,
+                  number: null,
+                };
+              });
+              
+              this.handleSpacesLoaded(spaces);
+           }
+        }
+      } catch (e) {
+        console.error('Failed to load simulation data:', e);
+        alert('加载模拟数据失败 (JSON格式可能不匹配)');
+      }
+    },
+    
+    // 处理加载的车位数据
+    handleSpacesLoaded(spaces) {
+      // 1. 确保每个车位都有 ID
+      spaces.forEach((space, i) => {
+          if (!space.id) {
+              space.id = `space_${Date.now()}_${i}`;
+          }
+      });
+
+      // 对车位进行排序
+      const sortedSpaces = [...spaces].sort(this.compareSpaces);
+
+      this.recognizedSpaces = sortedSpaces;
+      this.spaceFabricObjects.clear(); // 清空之前的映射
+      console.log('加载的车位数据(已排序):', sortedSpaces);
+      
+      this.renderSpaces();
+    },
+
+    // 渲染车位到画布
+    renderSpaces() {
+      if (this.canvas && this.recognizedSpaces.length > 0) {
+        // 清除现有的车位对象 (Optional: user might want to keep manually added ones? Let's assume replace for now)
+        // actually, handleDeleteObject removes from recognizedSpaces, so maybe we should clear only recognized/old ones?
+        // simple approach: rendering simply adds them. 
+        // Better: Check if they are already on canvas to avoid duplicates or clear canvas first?
+        // Since this is a "Load" action, maybe clear previous recognized objects?
+        
+        // Let's just create them. logic in createParkingSpace handles adding to canvas.
+        this.recognizedSpaces.forEach((space, index) => {
+          const fabricObj = this.createParkingSpace(space, index);
+          if (fabricObj) {
+            this.spaceFabricObjects.set(index, fabricObj);
+          }
+        });
+      }
+    },
+
     handleCanvasReady(canvas) {
       this.canvas = canvas;
     },
@@ -275,32 +390,6 @@ export default {
         this.canvas.remove(this.selectedObject.fabricObject);
         this.canvas.renderAll();
         this.selectedObject = null;
-      }
-    },
-    handleSpacesRecognized(spaces) {
-      // 1. 确保每个车位都有 ID
-      spaces.forEach((space, i) => {
-          if (!space.id) {
-              space.id = `space_${Date.now()}_${i}`;
-          }
-      });
-
-      // 对车位进行排序
-      const sortedSpaces = [...spaces].sort(this.compareSpaces);
-
-      this.recognizedSpaces = sortedSpaces;
-      this.spaceFabricObjects.clear(); // 清空之前的映射
-      console.log('识别到的车位数据(已排序):', sortedSpaces);
-      
-      // 将识别到的车位添加到画布上
-      if (this.canvas && sortedSpaces.length > 0) {
-        // 在画布上创建车位矩形
-        sortedSpaces.forEach((space, index) => {
-          const fabricObj = this.createParkingSpace(space, index);
-          if (fabricObj) {
-            this.spaceFabricObjects.set(index, fabricObj);
-          }
-        });
       }
     },
     // 车位排序比较函数

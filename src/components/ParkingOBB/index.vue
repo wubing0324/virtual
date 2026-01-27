@@ -23,7 +23,7 @@
         <!-- Background Image -->
         <image 
           v-if="bgImage"
-          :href="bgImage" 
+          :href="bgImage"
           x="0" 
           y="0" 
           :width="canvasWidth" 
