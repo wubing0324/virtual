@@ -69,14 +69,14 @@
             dominant-baseline="middle"
             :transform="`rotate(${box.xywhr.angle_deg}, ${box.xywhr.center_x}, ${box.xywhr.center_y})`"
           >
-            {{ box.class_name }}
+            {{ box.name }}
           </text>
         </g>
       </svg>
       
       <!-- Floating Info Card -->
       <div v-if="hoveredBox" class="info-card" :style="infoCardStyle">
-        <h4>{{ hoveredBox.class_name }}</h4>
+        <h4>{{ hoveredBox.name }}</h4>
         <p><strong>Conf:</strong> {{ (hoveredBox.confidence * 100).toFixed(1) }}%</p>
         <p><strong>Angle:</strong> {{ hoveredBox.angle_deg.toFixed(2) }}°</p>
         <p><strong>Center:</strong> ({{ hoveredBox.xywhr.center_x.toFixed(0) }}, {{ hoveredBox.xywhr.center_y.toFixed(0) }})</p>

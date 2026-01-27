@@ -49,6 +49,26 @@
                    </select>
                 </div>
                 
+                <div class="control-group">
+                   <label>车位号 OCR</label>
+                   <select v-model="recognitionConfig.ocrEngine" class="config-select">
+                      <option value="">关闭</option>
+                      <option value="easy">EasyOCR（中英数）</option>
+                      <option value="paddle">PaddleOCR（中英数）</option>
+                   </select>
+                </div>
+                
+                <div class="control-group">
+                   <label>文字颜色</label>
+                   <select v-model="recognitionConfig.textColor" class="config-select">
+                      <option value="yellow">黄色</option>
+                      <option value="black">黑色</option>
+                      <option value="red">红色</option>
+                      <option value="white">白色</option>
+                      <option value="green">绿色</option>
+                   </select>
+                </div>
+                
                 <button 
                   class="action-btn recognize-btn" 
                   :disabled="isRecognizing"
@@ -173,7 +193,9 @@ export default {
       recognitionConfig: {
         borderColor: 'blue',
         imgsz: 640,
-        conf: 0.25
+        conf: 0.25,
+        ocrEngine: '', // 车位号 OCR 引擎：空字符串表示关闭，'easy' 或 'paddle'
+        textColor: 'yellow' // 文字颜色：yellow/black/red/white/green
       },
       
       // Filter State
@@ -244,6 +266,8 @@ export default {
             fd.append("imgsz", this.recognitionConfig.imgsz);
             fd.append("conf", this.recognitionConfig.conf);
             fd.append("border_color", this.recognitionConfig.borderColor);
+            fd.append("ocr_engine", this.recognitionConfig.ocrEngine);
+            fd.append("text_color", this.recognitionConfig.textColor);
             
             // Convert Base64/URL to Blob
             const res = await fetch(this.imageUrl);
@@ -355,7 +379,7 @@ export default {
               rotatedWidth: width, 
               rotatedHeight: height,
               vertices: points ? points.map(p => Array.isArray(p) ? {x:p[0], y:p[1]} : p) : null,
-              number: box.class_name || null, // Map class_name to number/label if available
+              number: box.name || null, // Map class_name to number/label if available
             };
         });
         
