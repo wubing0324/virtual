@@ -13,7 +13,17 @@
 
       <!-- B区：工具面板和编辑面板 -->
       <div class="area-b">
-        <div class="area-header">工具面板 (B区)
+        <div class="area-header">
+          <span>工具面板 (B区)</span>
+          <button 
+            class="export-btn" 
+            @click="exportData"
+            :disabled="recognizedSpaces.length === 0"
+            title="导出识别结果"
+          >
+            <span class="icon">⬇</span>
+            <span class="text">导出JSON</span>
+          </button>
         </div>
         
         <!-- Tab 切换 -->
@@ -422,6 +432,171 @@ export default {
         this.allRecognizedSpaces = [];
         this.selectedSpaceIndex = null;
         this.selectedObject = null;
+    },
+    
+    async exportData() {
+        if (!this.allRecognizedSpaces || this.allRecognizedSpaces.length === 0) {
+            alert('没有可导出的数据，请先进行识别');
+            return;
+        }
+        
+        // 获取图片尺寸
+        let imageWidth = 0;
+        let imageHeight = 0;
+        
+        if (this.canvas) {
+            // 方法1: 从 canvas 尺寸获取（如果图片已加载，canvas 尺寸就是图片尺寸）
+            imageWidth = this.canvas.width || 0;
+            imageHeight = this.canvas.height || 0;
+            
+            // 方法2: 如果 canvas 尺寸为 0，尝试从背景图片对象获取
+            if (imageWidth === 0 || imageHeight === 0) {
+                const objects = this.canvas.getObjects();
+                const backgroundImg = objects.find(obj => obj.type === 'image' && !obj.selectable);
+                if (backgroundImg) {
+                    imageWidth = backgroundImg.width || 0;
+                    imageHeight = backgroundImg.height || 0;
+                }
+            }
+            
+            // 方法3: 如果还是获取不到，从图片 URL 加载获取
+            if ((imageWidth === 0 || imageHeight === 0) && this.imageUrl) {
+                try {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    await new Promise((resolve, reject) => {
+                        img.onload = () => {
+                            imageWidth = img.width;
+                            imageHeight = img.height;
+                            resolve();
+                        };
+                        img.onerror = reject;
+                        img.src = this.imageUrl;
+                    });
+                } catch (error) {
+                    console.warn('无法获取图片尺寸:', error);
+                }
+            }
+        }
+        
+        // 从画布获取最新的数据（包括用户手动调整后的位置、大小等）
+        const updatedSpaces = this.allRecognizedSpaces.map(space => {
+            // 尝试从画布上获取最新的对象数据
+            let fabricObj = null;
+            if (this.canvas && space.id) {
+                const objects = this.canvas.getObjects();
+                fabricObj = objects.find(obj => obj.id === space.id);
+            }
+            
+            // 如果找到了画布对象，使用画布上的最新数据
+            if (fabricObj) {
+                return {
+                    id: space.id,
+                    spaceCode: fabricObj.parkingNumber || space.number || null,
+                    x: fabricObj.left || space.x,
+                    y: fabricObj.top || space.y,
+                    centerX: fabricObj.left + (fabricObj.width * (fabricObj.scaleX || 1)) / 2,
+                    centerY: fabricObj.top + (fabricObj.height * (fabricObj.scaleY || 1)) / 2,
+                    width: (fabricObj.width || space.width) * (fabricObj.scaleX || 1),
+                    height: (fabricObj.height || space.height) * (fabricObj.scaleY || 1),
+                    angle: fabricObj.angle || space.angle || 0,
+                    fill: fabricObj.fill || null,
+                    area: (fabricObj.width || space.width) * (fabricObj.scaleX || 1) * 
+                          (fabricObj.height || space.height) * (fabricObj.scaleY || 1),
+                    rotatedWidth: space.rotatedWidth,
+                    rotatedHeight: space.rotatedHeight,
+                    vertices: space.vertices || null,
+                };
+            }
+            
+            // 否则使用原始数据
+            return {
+                id: space.id,
+                spaceCode: space.number || null,
+                x: space.x,
+                y: space.y,
+                centerX: space.centerX,
+                centerY: space.centerY,
+                width: space.width,
+                height: space.height,
+                angle: space.angle || 0,
+                fill: null,
+                area: space.area || (space.width * space.height),
+                rotatedWidth: space.rotatedWidth,
+                rotatedHeight: space.rotatedHeight,
+                vertices: space.vertices || null,
+            };
+        });
+        
+        // 收集所有需要导出的数据
+        const exportData = {
+            // 元数据
+            metadata: {
+                exportTime: new Date().toISOString(),
+                version: '1.0',
+                // imageUrl: this.imageUrl || null,
+                imageSize: {
+                    width: imageWidth,
+                    height: imageHeight,
+                },
+            },
+            
+            // 识别配置
+            recognitionConfig: {
+                borderColor: this.recognitionConfig.borderColor,
+                imgsz: this.recognitionConfig.imgsz,
+                conf: this.recognitionConfig.conf,
+                ocrEngine: this.recognitionConfig.ocrEngine,
+                textColor: this.recognitionConfig.textColor,
+                textNumberColor: this.recognitionConfig.textNumberColor,
+                textNumberOpacity: this.recognitionConfig.textNumberOpacity,
+                textNumberFontSize: this.recognitionConfig.textNumberFontSize,
+                textNumberOffsetX: this.recognitionConfig.textNumberOffsetX,
+                textNumberOffsetY: this.recognitionConfig.textNumberOffsetY,
+            },
+            
+            // 车位数据（包含用户编辑后的最新数据）
+            spaces: updatedSpaces,
+            
+            // 统计信息
+            statistics: {
+                totalSpaces: this.allRecognizedSpaces.length,
+                filteredSpaces: this.recognizedSpaces.length,
+                exportDate: new Date().toLocaleString('zh-CN'),
+            }
+        };
+        
+        // 转换为 JSON 字符串
+        const jsonString = JSON.stringify(exportData, null, 2);
+        
+        // 创建下载链接
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        
+        // 生成文件名（包含时间戳）
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const filename = `parking-spaces-${timestamp}.json`;
+        
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        
+        // 清理
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        // 提示用户
+        this.recognitionStatus = `已导出 ${this.allRecognizedSpaces.length} 个车位数据`;
+        this.recognitionStatusType = 'success';
+        
+        // 3秒后清除提示
+        setTimeout(() => {
+            if (this.recognitionStatus.includes('已导出')) {
+                this.recognitionStatus = '';
+            }
+        }, 3000);
     },
 
     processBoxes(boxes) {
@@ -959,7 +1134,6 @@ export default {
         originX: originX,
         originY: originY,
       });
-      console.log(`创建车位对象: ID=${spaceId}, Number=${space.number}`);
 
       // 如果有车位号，添加文本标签（作为矩形的一部分，跟随移动）
       let text = null;
@@ -1158,11 +1332,50 @@ export default {
 }
 
 .area-header {
-  padding: 15px;
+  padding: 12px 15px;
   background: #f8f9fa;
   border-bottom: 1px solid #ddd;
   font-weight: bold;
   font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid #2196F3;
+  background: #ffffff;
+  color: #2196F3;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.export-btn:hover:not(:disabled) {
+  background: #2196F3;
+  color: #ffffff;
+}
+
+.export-btn:disabled {
+  background: #f5f5f5;
+  color: #999;
+  border-color: #ddd;
+  cursor: not-allowed;
+}
+
+.export-btn .icon {
+  font-size: 14px;
+}
+
+.export-btn .text {
+  font-size: 12px;
 }
 
 .tab-container {

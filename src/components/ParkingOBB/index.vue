@@ -87,8 +87,8 @@
 </template>
 
 <script>
-import obbData from '@/assets/const/obb-result-2026-01-26-06-59-28.json';
-import bgImage from '@/assets/1.png';
+import obbData from '@/assets/const/parking-spaces.json';
+import bgImage from '@/assets/white.png';
 
 export default {
   name: 'ParkingOBB',
@@ -106,28 +106,74 @@ export default {
     };
   },
   computed: {
-    // Flatten boxes from all items in the array (assuming it might be a batch, or usually just one)
+    // 从新的数据结构中提取 spaces 数组
     allBoxes() {
+      if (!this.rawData) return [];
+      
+      // 新格式：{ metadata, recognitionConfig, spaces: [...] }
+      if (this.rawData.spaces && Array.isArray(this.rawData.spaces)) {
+        return this.rawData.spaces.map(space => {
+          // 转换数据结构以适配组件
+          // 将 vertices 转换为 xyxyxyxy 格式
+          const xyxyxyxy = space.vertices 
+            ? space.vertices.map(v => [v.x, v.y])
+            : this.calculateVerticesFromRect(space);
+          
+          // 计算角度（弧度）
+          const angleRad = (space.angle || 0) * Math.PI / 180;
+          
+          return {
+            id: space.id,
+            name: space.spaceCode || space.number || `Space ${space.id}`,
+            confidence: 1.0, // 新格式没有置信度，设为1.0
+            xyxyxyxy: xyxyxyxy,
+            xywhr: {
+              center_x: space.centerX || space.x,
+              center_y: space.centerY || space.y,
+              width: space.width,
+              height: space.height,
+              angle_rad: angleRad,
+              angle_deg: space.angle || 0,
+            },
+            angle_rad: angleRad,
+            angle_deg: space.angle || 0,
+            // 保留原始数据
+            original: space,
+          };
+        });
+      }
+      
+      // 兼容旧格式：数组格式
       if (Array.isArray(this.rawData)) {
         return this.rawData.flatMap(item => item.boxes || []);
       }
+      
       return [];
     },
     totalBoxes() {
       return this.allBoxes.length;
+    },
+    // 从 metadata 获取图片尺寸
+    imageSize() {
+      if (this.rawData && this.rawData.metadata && this.rawData.metadata.imageSize) {
+        return this.rawData.metadata.imageSize;
+      }
+      return { width: 0, height: 0 };
     },
     // Calculate bounding box of all polygons to set viewBox
     bounds() {
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       
       this.allBoxes.forEach(box => {
-        box.xyxyxyxy.forEach(point => {
-          const [x, y] = point;
-          if (x < minX) minX = x;
-          if (y < minY) minY = y;
-          if (x > maxX) maxX = x;
-          if (y > maxY) maxY = y;
-        });
+        if (box.xyxyxyxy && Array.isArray(box.xyxyxyxy)) {
+          box.xyxyxyxy.forEach(point => {
+            const [x, y] = point;
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+          });
+        }
       });
 
       // Add some padding
@@ -140,12 +186,30 @@ export default {
       };
     },
     canvasWidth() {
-      return this.imgWidth > 0 ? this.imgWidth : this.bounds.maxX;
+      // 优先使用 metadata 中的图片尺寸
+      if (this.imageSize.width > 0) {
+        return this.imageSize.width;
+      }
+      if (this.imgWidth > 0) {
+        return this.imgWidth;
+      }
+      return this.bounds.maxX;
     },
     canvasHeight() {
-      return this.imgHeight > 0 ? this.imgHeight : this.bounds.maxY;
+      // 优先使用 metadata 中的图片尺寸
+      if (this.imageSize.height > 0) {
+        return this.imageSize.height;
+      }
+      if (this.imgHeight > 0) {
+        return this.imgHeight;
+      }
+      return this.bounds.maxY;
     },
     viewBox() {
+      // 优先使用 metadata 中的图片尺寸
+      if (this.imageSize.width > 0 && this.imageSize.height > 0) {
+        return `0 0 ${this.imageSize.width} ${this.imageSize.height}`;
+      }
       if (this.imgWidth > 0 && this.imgHeight > 0) {
         return `0 0 ${this.imgWidth} ${this.imgHeight}`;
       }
@@ -178,7 +242,44 @@ export default {
         };
     },
     getPoints(pointsArray) {
-      return pointsArray.map(p => p.join(',')).join(' ');
+      if (!pointsArray || !Array.isArray(pointsArray)) return '';
+      return pointsArray.map(p => {
+        // 处理数组格式 [x, y] 或对象格式 {x, y}
+        if (Array.isArray(p)) {
+          return p.join(',');
+        }
+        if (p && typeof p === 'object' && p.x !== undefined && p.y !== undefined) {
+          return `${p.x},${p.y}`;
+        }
+        return '';
+      }).filter(p => p).join(' ');
+    },
+    // 如果没有 vertices，从矩形参数计算四个顶点
+    calculateVerticesFromRect(space) {
+      const cx = space.centerX || space.x;
+      const cy = space.centerY || space.y;
+      const w = space.width || 0;
+      const h = space.height || 0;
+      const angle = (space.angle || 0) * Math.PI / 180;
+      
+      // 计算矩形的四个角点（相对于中心）
+      const halfW = w / 2;
+      const halfH = h / 2;
+      const corners = [
+        [-halfW, -halfH],
+        [halfW, -halfH],
+        [halfW, halfH],
+        [-halfW, halfH]
+      ];
+      
+      // 旋转并平移
+      return corners.map(([x, y]) => {
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const rotatedX = x * cos - y * sin;
+        const rotatedY = x * sin + y * cos;
+        return [cx + rotatedX, cy + rotatedY];
+      });
     },
     updateMouse(e) {
       this.mouseX = e.clientX;
@@ -193,7 +294,7 @@ export default {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f0f2f5;
+  background-color: blue;
   font-family: 'Inter', sans-serif;
 }
 
