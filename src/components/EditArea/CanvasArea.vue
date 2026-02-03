@@ -171,54 +171,91 @@ export default {
         const shape = JSON.parse(shapeData);
         const container = this.$refs.canvasContainer;
         const rect = container.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        // 计算坐标时需要考虑容器的滚动位置
+        // event.clientX/Y 是相对于视口的坐标
+        // rect.left/top 是容器相对于视口的位置
+        // scrollLeft/Top 是容器已滚动的距离
+        // 最终坐标 = 鼠标在视口中的位置 - 容器在视口中的位置 + 容器已滚动的距离
+        const x = event.clientX - rect.left + container.scrollLeft;
+        const y = event.clientY - rect.top + container.scrollTop;
 
-        this.createShape(shape.type, x, y);
+        // 如果是批量创建的图形，传递完整的配置信息
+        if (shape.isBatchCreated) {
+          this.createShape(shape.type, x, y, {
+            width: shape.width,
+            height: shape.height,
+            angle: shape.angle,
+          });
+          // 通知父组件图形已成功拖拽到画布
+          this.$emit('shape-dropped', {
+            shapeId: shape.shapeId,
+          });
+        } else {
+          this.createShape(shape.type, x, y);
+        }
       } catch (e) {
         console.error('Failed to parse shape data:', e);
       }
     },
-    createShape(type, x, y) {
+    createShape(type, x, y, customConfig = null) {
       let fabricObject;
       const defaultSize = 100;
       const defaultColor = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+      // 生成随机颜色，并设置为半透明（alpha = 0.3）
+      const randomColorValue = Math.floor(Math.random() * 16777215);
+      const r = (randomColorValue >> 16) & 255;
+      const g = (randomColorValue >> 8) & 255;
+      const b = randomColorValue & 255;
+      const defaultColorWithAlpha = `rgba(${r}, ${g}, ${b}, 0.7)`;
+      
+      // 如果提供了自定义配置，使用它；否则使用默认值
+      const width = customConfig?.width || defaultSize;
+      const height = customConfig?.height || defaultSize;
+      const angle = customConfig?.angle || 0;
 
       switch (type) {
         case 'rect':
           fabricObject = new Rect({
-            left: x - defaultSize / 2,
-            top: y - defaultSize / 2,
-            width: defaultSize,
-            height: defaultSize,
-            fill: defaultColor,
+            left: x,
+            top: y,
+            width: width,
+            height: height,
+            angle: angle,
+            fill: defaultColorWithAlpha,
             stroke: '#333',
             strokeWidth: 2,
+            originX: 'center',
+            originY: 'center',
           });
           break;
         case 'circle':
           fabricObject = new Circle({
-            left: x - defaultSize / 2,
-            top: y - defaultSize / 2,
-            radius: defaultSize / 2,
-            fill: defaultColor,
+            left: x,
+            top: y,
+            radius: width / 2, // 使用 width 作为直径
+            fill: defaultColorWithAlpha,
             stroke: '#333',
             strokeWidth: 2,
+            originX: 'center',
+            originY: 'center',
           });
           break;
         case 'triangle':
           fabricObject = new Triangle({
-            left: x - defaultSize / 2,
-            top: y - defaultSize / 2,
-            width: defaultSize,
-            height: defaultSize,
-            fill: defaultColor,
+            left: x,
+            top: y,
+            width: width,
+            height: height,
+            angle: angle,
+            fill: defaultColorWithAlpha,
             stroke: '#333',
             strokeWidth: 2,
+            originX: 'center',
+            originY: 'center',
           });
           break;
         case 'line':
-          fabricObject = new Line([x - defaultSize / 2, y, x + defaultSize / 2, y], {
+          fabricObject = new Line([x - width / 2, y, x + width / 2, y], {
             stroke: defaultColor,
             strokeWidth: 3,
             selectable: true,
@@ -238,8 +275,9 @@ export default {
       }
 
       // 添加唯一ID和位置信息
+      const shapeId = `shape_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       fabricObject.set({
-        id: `shape_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: shapeId,
         originX: 'center',
         originY: 'center',
       });
@@ -247,6 +285,13 @@ export default {
       this.canvas.add(fabricObject);
       this.canvas.setActiveObject(fabricObject);
       this.canvas.renderAll();
+      
+      // 通知父组件新创建的图形，以便添加到 allRecognizedSpaces
+      this.$emit('shape-created', {
+        id: shapeId,
+        type: type,
+        fabricObject: fabricObject,
+      });
     },
     handleSelection(e) {
       if (!this.canvas) return;

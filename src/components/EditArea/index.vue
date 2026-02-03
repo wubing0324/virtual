@@ -9,6 +9,8 @@
             @object-selected="handleObjectSelected"
             @selection-cleared="handleSelectionCleared"
             @object-modified="handleObjectModified"
+            @shape-created="handleShapeCreated"
+            @shape-dropped="handleShapeDropped"
           />
 
       <!-- B区：工具面板和编辑面板 -->
@@ -234,7 +236,7 @@
             
             <!-- 图形库 Tab -->
             <div v-show="activeTab === 'shapes'" class="tab-panel shapes-panel">
-              <ShapeLibrary />
+              <ShapeLibrary ref="shapeLibrary" @shape-dropped="handleShapeDropped" />
             </div>
           </div>
         </div>
@@ -490,22 +492,31 @@ export default {
             
             // 如果找到了画布对象，使用画布上的最新数据
             if (fabricObj) {
+                // 使用 getBoundingRect 获取准确的边界框（考虑旋转、缩放、中心点定位等）
+                const bounds = fabricObj.getBoundingRect();
+                const width = bounds.width;
+                const height = bounds.height;
+                const centerX = bounds.left + width / 2;
+                const centerY = bounds.top + height / 2;
+                const x = bounds.left;
+                const y = bounds.top;
+                
                 return {
                     id: space.id,
                     spaceCode: fabricObj.parkingNumber || space.number || null,
-                    x: fabricObj.left || space.x,
-                    y: fabricObj.top || space.y,
-                    centerX: fabricObj.left + (fabricObj.width * (fabricObj.scaleX || 1)) / 2,
-                    centerY: fabricObj.top + (fabricObj.height * (fabricObj.scaleY || 1)) / 2,
-                    width: (fabricObj.width || space.width) * (fabricObj.scaleX || 1),
-                    height: (fabricObj.height || space.height) * (fabricObj.scaleY || 1),
+                    x: x,
+                    y: y,
+                    centerX: centerX,
+                    centerY: centerY,
+                    width: width,
+                    height: height,
                     angle: fabricObj.angle || space.angle || 0,
                     fill: fabricObj.fill || null,
-                    area: (fabricObj.width || space.width) * (fabricObj.scaleX || 1) * 
-                          (fabricObj.height || space.height) * (fabricObj.scaleY || 1),
-                    rotatedWidth: space.rotatedWidth,
-                    rotatedHeight: space.rotatedHeight,
+                    area: width * height,
+                    rotatedWidth: width,
+                    rotatedHeight: height,
                     vertices: space.vertices || null,
+                    shapeType: space.shapeType || null, // 保留图形类型信息
                 };
             }
             
@@ -520,27 +531,17 @@ export default {
                 width: space.width,
                 height: space.height,
                 angle: space.angle || 0,
-                fill: null,
+                fill: space.fill || null,
                 area: space.area || (space.width * space.height),
                 rotatedWidth: space.rotatedWidth,
                 rotatedHeight: space.rotatedHeight,
                 vertices: space.vertices || null,
+                shapeType: space.shapeType || null, // 保留图形类型信息
             };
         });
         
         // 收集所有需要导出的数据
         const exportData = {
-            // 元数据
-            metadata: {
-                exportTime: new Date().toISOString(),
-                version: '1.0',
-                // imageUrl: this.imageUrl || null,
-                imageSize: {
-                    width: imageWidth,
-                    height: imageHeight,
-                },
-            },
-            
             // 识别配置
             recognitionConfig: {
                 borderColor: this.recognitionConfig.borderColor,
@@ -563,6 +564,16 @@ export default {
                 totalSpaces: this.allRecognizedSpaces.length,
                 filteredSpaces: this.recognizedSpaces.length,
                 exportDate: new Date().toLocaleString('zh-CN'),
+            },
+            // 元数据
+            metadata: {
+                exportTime: new Date().toISOString(),
+                version: '1.0',
+                imageUrl: this.imageUrl || null,
+                imageSize: {
+                    width: imageWidth,
+                    height: imageHeight,
+                },
             }
         };
         
@@ -862,6 +873,57 @@ export default {
     handleObjectModified(updatedData) {
       if (this.selectedObject) {
         Object.assign(this.selectedObject, updatedData);
+      }
+    },
+    handleShapeCreated(shapeData) {
+      // 将新创建的图形添加到 allRecognizedSpaces，以便导出时包含
+      const { id, type, fabricObject } = shapeData;
+      
+      if (!fabricObject) return;
+      
+      // 使用 getBoundingRect 获取准确的边界框（考虑旋转和缩放）
+      const bounds = fabricObject.getBoundingRect();
+      const width = bounds.width;
+      const height = bounds.height;
+      const centerX = bounds.left + width / 2;
+      const centerY = bounds.top + height / 2;
+      const x = bounds.left; // 左上角 x
+      const y = bounds.top;  // 左上角 y
+      
+      // 创建与 allRecognizedSpaces 相同格式的空间对象
+      const newSpace = {
+        id: id,
+        number: null, // 图形库创建的图形没有车位号
+        spaceCode: null,
+        x: x,
+        y: y,
+        centerX: centerX,
+        centerY: centerY,
+        width: width,
+        height: height,
+        angle: fabricObject.angle || 0,
+        fill: fabricObject.fill || null,
+        area: width * height,
+        rotatedWidth: width,
+        rotatedHeight: height,
+        vertices: null, // 图形库创建的图形没有 vertices
+        shapeType: type, // 标记这是从图形库创建的
+      };
+      
+      // 添加到 allRecognizedSpaces
+      this.allRecognizedSpaces.push(newSpace);
+      
+      // 如果当前没有过滤条件，也添加到 recognizedSpaces 显示
+      if (!this.filterText && !this.filterByConfidence) {
+        this.recognizedSpaces.push(newSpace);
+      }
+      
+      console.log('新图形已添加到 allRecognizedSpaces:', newSpace);
+    },
+    handleShapeDropped(data) {
+      // 通知 ShapeLibrary 删除已拖拽的图形
+      if (this.$refs.shapeLibrary && data.shapeId) {
+        this.$refs.shapeLibrary.deleteShapeById(data.shapeId);
       }
     },
     handleUpdateProperty(property, value) {

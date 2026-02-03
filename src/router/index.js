@@ -62,6 +62,14 @@ export const routes = [
       title: 'OBB结果',
     },
   },
+  {
+    path: '/ParkingSvg',
+    name: 'ParkingSvg',
+    component: () => import('@/components/ParkingSvg/index.vue'),
+    meta: {
+      title: 'OBB结果',
+    },
+  },
 ];
 
 const router = new VueRouter({
