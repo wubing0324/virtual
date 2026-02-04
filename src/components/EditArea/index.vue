@@ -80,6 +80,16 @@
                 </div>
                 
                 <div class="control-group">
+                  <label>车位号类型</label>
+                  <select v-model="recognitionConfig.slotType" class="config-select">
+                    <option value="auto">自动识别</option>
+                    <option value="digits">纯数字（如 051、052）</option>
+                    <option value="alphanum">字母+数字（如 A150、B121）</option>
+                    <option value="chinese">汉字（如 网约车01）</option>
+                  </select>
+                </div>
+                
+                <div class="control-group">
                   <label>文字颜色（图片中车位号的颜色）</label>
                   <select v-model="recognitionConfig.textColor" class="config-select">
                     <option value="yellow">黄色</option>
@@ -286,6 +296,7 @@ export default {
         imgsz: 640,
         conf: 0.25,
         ocrEngine: 'paddle', // 车位号 OCR 引擎：空字符串表示关闭，'easy' 或 'paddle'
+        slotType: 'auto', // 车位号类型：auto/digits/alphanum/chinese
         textColor: 'yellow', // 文字颜色：yellow/black/red/white/green（用于后端识别）
         textNumberColor: '#000000', // 车位号文字颜色（用于前端显示）
         textNumberOpacity: 1.0, // 车位号文字透明度（0-1）
@@ -374,6 +385,7 @@ export default {
             fd.append("conf", this.recognitionConfig.conf);
             fd.append("border_color", this.recognitionConfig.borderColor);
             fd.append("ocr_engine", this.recognitionConfig.ocrEngine);
+            fd.append("slot_type", this.recognitionConfig.slotType);
             fd.append("text_color", this.recognitionConfig.textColor);
             
             // Convert Base64/URL to Blob
@@ -548,6 +560,7 @@ export default {
                 imgsz: this.recognitionConfig.imgsz,
                 conf: this.recognitionConfig.conf,
                 ocrEngine: this.recognitionConfig.ocrEngine,
+                slotType: this.recognitionConfig.slotType,
                 textColor: this.recognitionConfig.textColor,
                 textNumberColor: this.recognitionConfig.textNumberColor,
                 textNumberOpacity: this.recognitionConfig.textNumberOpacity,
