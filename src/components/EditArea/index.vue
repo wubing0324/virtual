@@ -69,11 +69,11 @@
                     <option value="white">白色 (White)</option>
                   </select>
                 </div>
-                
                 <div class="control-group">
                   <label>车位号识别</label>
                   <select v-model="recognitionConfig.ocrEngine" class="config-select">
                     <option value="">关闭</option>
+                    <option value="auto">自动（PaddleOCR + EasyOCR 兜底，推荐）</option>
                     <option value="easy">EasyOCR</option>
                     <option value="paddle">PaddleOCR</option>
                   </select>
