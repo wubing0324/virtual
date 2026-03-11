@@ -529,6 +529,7 @@ export default {
                     rotatedHeight: height,
                     vertices: space.vertices || null,
                     shapeType: space.shapeType || null, // 保留图形类型信息
+                    label: fabricObj.label || null, // 附加标签信息
                 };
             }
             
@@ -549,6 +550,7 @@ export default {
                 rotatedHeight: space.rotatedHeight,
                 vertices: space.vertices || null,
                 shapeType: space.shapeType || null, // 保留图形类型信息
+                label: space.label || null, // 附加标签信息
             };
         });
         
@@ -945,6 +947,35 @@ export default {
       const obj = this.selectedObject.fabricObject;
       const numValue = parseFloat(value);
 
+      // 处理附加标签（label.xxx）更新
+      if (property.startsWith('label.')) {
+        const subKey = property.slice(6);
+        const defaultLabel = {
+          visible: false,
+          position: 'top',
+          margin: 0,
+          offsetX: 0,
+          offsetY: 0,
+          name: '',
+          angle: 0,
+          fontSize: 14,
+          fill: '#000000',
+        };
+        if (!obj.label) obj.set('label', { ...defaultLabel, angle: obj.angle ?? 0 });
+        const label = obj.label;
+        if (subKey === 'visible') {
+          label.visible = !!value;
+        } else if (['margin', 'offsetX', 'offsetY', 'angle', 'fontSize'].includes(subKey)) {
+          label[subKey] = typeof value === 'number' ? value : parseFloat(value) || 0;
+        } else {
+          label[subKey] = value;
+        }
+        this.$set(this.selectedObject, 'label', { ...label });
+        this.syncLabelToCanvas(obj);
+        this.canvas.renderAll();
+        return;
+      }
+
       // 处理车位号更新
       if (property === 'parkingNumber') {
         obj.set('parkingNumber', value || null);
@@ -1071,6 +1102,120 @@ export default {
         }
       }
     },
+    // 将附属于矩形的标签同步到画布（创建/更新/移除 Fabric 文本）
+    syncLabelToCanvas(obj) {
+      const { Text } = require('fabric');
+      const defaultLabel = {
+        visible: false,
+        position: 'top',
+        margin: 0,
+        offsetX: 0,
+        offsetY: 0,
+        name: '',
+        angle: 0,
+        fontSize: 14,
+        fill: '#000000',
+      };
+      const label = obj.label ? { ...defaultLabel, ...obj.label } : defaultLabel;
+      // 标签旋转角度默认与矩形相同，若未单独设置则用矩形角度
+      const rectAngle = Number(obj.angle) || 0;
+      const angle = (label.angle !== undefined && label.angle !== null && label.angle !== '')
+        ? Number(label.angle) || 0
+        : rectAngle;
+
+      if (!label.visible) {
+        if (obj.labelText) {
+          this.canvas.remove(obj.labelText);
+          obj.labelText = null;
+        }
+        return;
+      }
+
+      const displayText = (label.name && String(label.name).trim()) || obj.parkingNumber || '';
+      if (!displayText) {
+        if (obj.labelText) {
+          this.canvas.remove(obj.labelText);
+          obj.labelText = null;
+        }
+        return;
+      }
+
+      const b = obj.getBoundingRect();
+      const margin = Number(label.margin) || 0;
+      const pos = label.position || 'top';
+      let left;
+      let top;
+      let originX;
+      let originY;
+      if (pos === 'top') {
+        left = b.left + b.width / 2;
+        top = b.top - margin;
+        originX = 'center';
+        originY = 'bottom';
+      } else if (pos === 'bottom') {
+        left = b.left + b.width / 2;
+        top = b.top + b.height + margin;
+        originX = 'center';
+        originY = 'top';
+      } else if (pos === 'left') {
+        left = b.left - margin;
+        top = b.top + b.height / 2;
+        originX = 'right';
+        originY = 'center';
+      } else {
+        left = b.left + b.width + margin;
+        top = b.top + b.height / 2;
+        originX = 'left';
+        originY = 'center';
+      }
+      const offsetX = Number(label.offsetX) || 0;
+      const offsetY = Number(label.offsetY) || 0;
+      left += offsetX;
+      top += offsetY;
+
+      const fontSize = Math.max(8, Number(label.fontSize) || 14);
+      const fill = label.fill || '#000000';
+
+      if (!obj.labelText) {
+        const text = new Text(displayText, {
+          left,
+          top,
+          originX,
+          originY,
+          fontSize,
+          fill,
+          angle,
+          fontFamily: 'Arial',
+          selectable: false,
+          evented: false,
+          labelSpaceId: obj.id,
+        });
+        this.canvas.add(text);
+        obj.labelText = text;
+
+        const updateLabelPosition = () => {
+          this.syncLabelToCanvas(obj);
+          this.canvas.renderAll();
+        };
+        if (!obj._labelEventsBound) {
+          obj.on('moving', updateLabelPosition);
+          obj.on('rotating', updateLabelPosition);
+          obj.on('scaling', updateLabelPosition);
+          obj._labelEventsBound = true;
+        }
+      } else {
+        obj.labelText.set({
+          text: displayText,
+          left,
+          top,
+          originX,
+          originY,
+          fontSize,
+          fill,
+          angle,
+        });
+      }
+    },
     handleDeleteObject() {
       if (this.selectedObject && this.selectedObject.fabricObject) {
         // 如果是车位对象，也从 recognizedSpaces 中移除
@@ -1082,7 +1227,12 @@ export default {
              }
         }
         
-        this.canvas.remove(this.selectedObject.fabricObject);
+        const fabricObj = this.selectedObject.fabricObject;
+        if (fabricObj.labelText) {
+          this.canvas.remove(fabricObj.labelText);
+          fabricObj.labelText = null;
+        }
+        this.canvas.remove(fabricObj);
         this.canvas.renderAll();
         this.selectedObject = null;
       }
@@ -1199,15 +1349,28 @@ export default {
         borderDashArray: [5, 5], // 虚线边框，更醒目
       });
 
-      // 添加车位信息
-      // ID 应该已经存在于 space 对象中
-      const spaceId = space.id; 
+      // 添加车位信息及附加标签默认结构
+      const spaceId = space.id;
+      const defaultLabel = {
+        visible: false,
+        position: 'top',
+        margin: 0,
+        offsetX: 0,
+        offsetY: 0,
+        name: '',
+        angle: 0,
+        fontSize: 14,
+        fill: '#000000',
+      };
       rect.set({
         id: spaceId,
         parkingNumber: space.number || null,
         parkingIndex: index, // 保存索引，用于定位
         originX: originX,
         originY: originY,
+        label: space.label
+          ? { ...defaultLabel, ...space.label }
+          : { ...defaultLabel, angle: space.angle ?? 0 }, // 标签旋转默认与矩形相同
       });
 
       // 如果有车位号，添加文本标签（作为矩形的一部分，跟随移动）

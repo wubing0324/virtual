@@ -88,6 +88,115 @@
             <span>{{ selectedObject.fill || '#000000' }}</span>
           </div>
         </div>
+
+        <!-- 附加标签（附属于矩形的额外位置信息） -->
+        <div v-if="selectedObject.label !== undefined" class="label-section">
+          <div class="label-section-header" @mousedown.stop>
+            <span class="label-section-title">附加标签</span>
+          </div>
+          <div class="label-form">
+            <div class="form-group checkbox-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  :checked="selectedObject.label.visible"
+                  @change="updateLabelProperty('visible', $event.target.checked)"
+                  @mousedown.stop
+                />
+                <span>显示标签</span>
+              </label>
+            </div>
+            <template v-if="selectedObject.label.visible">
+              <div class="form-group">
+                <label>位置（相对矩形）:</label>
+                <select
+                  :value="selectedObject.label.position"
+                  @input="updateLabelProperty('position', $event.target.value)"
+                  @mousedown.stop
+                >
+                  <option value="top">上</option>
+                  <option value="bottom">下</option>
+                  <option value="left">左</option>
+                  <option value="right">右</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>边距 (px):</label>
+                <input
+                  type="number"
+                  :value="selectedObject.label.margin"
+                  @input="updateLabelProperty('margin', $event.target.value)"
+                  @mousedown.stop
+                  min="0"
+                />
+              </div>
+              <div class="row-group">
+                <div class="form-group half">
+                  <label>左右平移 (px):</label>
+                  <input
+                    type="number"
+                    :value="selectedObject.label.offsetX"
+                    @input="updateLabelProperty('offsetX', $event.target.value)"
+                    @mousedown.stop
+                  />
+                </div>
+                <div class="form-group half">
+                  <label>上下平移 (px):</label>
+                  <input
+                    type="number"
+                    :value="selectedObject.label.offsetY"
+                    @input="updateLabelProperty('offsetY', $event.target.value)"
+                    @mousedown.stop
+                  />
+                </div>
+              </div>
+              <div class="form-group">
+                <label>名称（默认车位号）:</label>
+                <input
+                  type="text"
+                  :value="selectedObject.label.name || ''"
+                  @input="updateLabelProperty('name', $event.target.value)"
+                  @mousedown.stop
+                  placeholder="留空则显示车位号"
+                />
+              </div>
+              <div class="form-group">
+                <label>标签旋转角度:</label>
+                <input
+                  type="number"
+                  :value="selectedObject.label.angle"
+                  @input="updateLabelProperty('angle', $event.target.value)"
+                  @mousedown.stop
+                  min="0"
+                  max="360"
+                />
+              </div>
+              <div class="form-group">
+                <label>字体大小:</label>
+                <input
+                  type="number"
+                  :value="selectedObject.label.fontSize"
+                  @input="updateLabelProperty('fontSize', $event.target.value)"
+                  @mousedown.stop
+                  min="8"
+                />
+              </div>
+              <div class="form-group">
+                <label>标签颜色:</label>
+                <div class="color-picker-wrapper">
+                  <input
+                    type="color"
+                    :value="selectedObject.label.fill || '#000000'"
+                    @input="updateLabelProperty('fill', $event.target.value)"
+                    @mousedown.stop
+                  />
+                  <span>{{ selectedObject.label.fill || '#000000' }}</span>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
         <button class="delete-btn" @click="handleDelete" @mousedown.stop>删除选中对象</button>
       </div>
     </div>
@@ -140,6 +249,13 @@ export default {
     },
     updateProperty(property, value) {
       this.$emit('update-property', property, value);
+    },
+    updateLabelProperty(subKey, value) {
+      const numProps = ['margin', 'offsetX', 'offsetY', 'angle', 'fontSize'];
+      if (numProps.includes(subKey) && value !== '' && !isNaN(Number(value))) {
+        value = Number(value);
+      }
+      this.$emit('update-property', `label.${subKey}`, value);
     },
     handleDelete() {
       this.$emit('delete-object');
@@ -273,5 +389,53 @@ export default {
 
 .delete-btn:hover {
   background: #ff7875;
+}
+
+.label-section {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+
+.label-section-header {
+  margin-bottom: 8px;
+}
+
+.label-section-title {
+  font-weight: bold;
+  font-size: 13px;
+  color: #333;
+}
+
+.label-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checkbox-group {
+  margin-bottom: 0;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  cursor: pointer;
+}
+
+.label-form select {
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
 </style>

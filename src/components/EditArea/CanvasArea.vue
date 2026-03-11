@@ -16,6 +16,19 @@
 <script>
 import { Canvas, Rect, Circle, Triangle, Line, Text } from 'fabric';
 
+// 附加标签默认配置（附属于矩形的额外位置信息）
+const DEFAULT_LABEL = {
+  visible: false,
+  position: 'top',   // top | bottom | left | right
+  margin: 0,
+  offsetX: 0,       // 左右平移 (px)
+  offsetY: 0,       // 上下平移 (px)
+  name: '',         // 为空时显示车位号
+  angle: 0,
+  fontSize: 16,
+  fill: '#000000',
+};
+
 export default {
   name: 'CanvasArea',
   data() {
@@ -226,6 +239,7 @@ export default {
             strokeWidth: 2,
             originX: 'center',
             originY: 'center',
+            label: { ...DEFAULT_LABEL, angle }, // 标签旋转默认与矩形相同
           });
           break;
         case 'circle':
@@ -297,6 +311,12 @@ export default {
       if (!this.canvas) return;
       const activeObject = e?.selected?.[0] || this.canvas.getActiveObject();
       if (activeObject) {
+        const label = activeObject.label
+          ? { ...DEFAULT_LABEL, ...activeObject.label }
+          : { ...DEFAULT_LABEL };
+        // 标签旋转角度默认与矩形相同，若未单独设置则用矩形角度
+        label.angle = activeObject.label?.angle ?? activeObject.angle ?? 0;
+        label.angle = label.angle == 180 ? 0 : label.angle;
         const selectedData = {
           id: activeObject.id,
           left: Math.round(activeObject.left),
@@ -305,7 +325,8 @@ export default {
           height: Math.round((activeObject.height || 0) * (activeObject.scaleY || 1)),
           angle: Math.round(activeObject.angle || 0),
           fill: activeObject.fill || '#000000',
-          parkingNumber: activeObject.parkingNumber || null, // 车位号
+          parkingNumber: activeObject.parkingNumber || null,
+          label,
           fabricObject: activeObject,
         };
         this.$emit('object-selected', selectedData);
