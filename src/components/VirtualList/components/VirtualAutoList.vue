@@ -3,7 +3,8 @@
     class="virtual-auto-list"
     :style="{ height: height + 'px' }"
   >
-    <div class="virtual-auto-list__header">
+    <!-- 表头与列表区域分离，表头不参与纵向滚动 -->
+    <div ref="headerRef" class="virtual-auto-list__header">
       <div
         v-for="(col, colIndex) in columns"
         :key="col.prop || colIndex"
@@ -15,67 +16,26 @@
     </div>
 
     <!--
-      自动滚动：双倍数据 + 外层 overflow:hidden + 内层 CSS 动画 translateY(0)→(-50%)
-      整段位移恰好等于「一份列表」高度，循环时首尾相接无跳变（禁止用 scrollTop 驱动自动滚）
+      视口：overflow hidden，无 scrollTop 驱动；自动滚由 rAF 更新 offset + transform 完成
+      hover 时暂停 rAF
     -->
     <div
-      v-if="autoScroll"
-      ref="bodyRef"
-      class="virtual-auto-list__body virtual-auto-list__body--marquee"
-    >
-      <div
-        class="list-body-inner"
-        :style="marqueeInnerStyle"
-      >
-        <div
-          v-for="(row, index) in renderList"
-          :key="getRenderRowKey(row, index)"
-          class="virtual-auto-list__row"
-          :class="{ 'is-last-row': index === renderList.length - 1 }"
-          :style="rowStyle"
-          @click="onMarqueeRowClick(row, index)"
-        >
-          <div
-            v-for="(col, colIndex) in columns"
-            :key="col.prop || colIndex"
-            class="virtual-auto-list__cell"
-            :style="columnCellStyles[colIndex]"
-          >
-            <column-cell
-              v-if="col.render"
-              :column="col"
-              :row="row"
-              :index="logicalRowIndex(index)"
-            />
-            <span v-else class="virtual-auto-list__cell-text">{{ row[col.prop] }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 手动滚动：虚拟列表 + scrollTop，仅渲染可视区（与自动滚模式互斥） -->
-    <div
-      v-else
       ref="bodyRef"
       class="virtual-auto-list__body"
-      @scroll="handleBodyScroll"
+      @mouseenter="onBodyMouseEnter"
+      @mouseleave="onBodyMouseLeave"
     >
       <div
-        class="virtual-auto-list__phantom"
-        :style="{ height: totalHeight + 'px' }"
-        aria-hidden="true"
-      />
-      <div
         class="virtual-auto-list__list"
-        :style="viewport.listTransformStyle"
+        :style="listTransformStyle"
       >
         <div
-          v-for="(row, i) in viewport.visibleList"
-          :key="getRowKey(row, viewport.startIndex + i)"
+          v-for="(item, i) in visibleRows"
+          :key="'vr-' + i"
           class="virtual-auto-list__row"
-          :class="{ 'is-last-row': viewport.startIndex + i === dataList.length - 1 }"
+          :class="{ 'is-last-visible': i === visibleRows.length - 1 }"
           :style="rowStyle"
-          @click="onRowClick(row, viewport.startIndex + i)"
+          @click="onRowClick(item.row, item.index)"
         >
           <div
             v-for="(col, colIndex) in columns"
@@ -86,10 +46,10 @@
             <column-cell
               v-if="col.render"
               :column="col"
-              :row="row"
-              :index="viewport.startIndex + i"
+              :row="item.row"
+              :index="item.index"
             />
-            <span v-else class="virtual-auto-list__cell-text">{{ row[col.prop] }}</span>
+            <span v-else class="virtual-auto-list__cell-text">{{ item.row[col.prop] }}</span>
           </div>
         </div>
       </div>
@@ -98,6 +58,7 @@
 </template>
 
 <script>
+/** 可视区上下多渲染的行数，减轻快速滚动时露底 */
 const BUFFER = 5;
 
 const ColumnCell = {
@@ -136,7 +97,7 @@ export default {
     },
     autoScroll: {
       type: Boolean,
-      default: false
+      default: true
     },
     scrollSpeed: {
       type: Number,
@@ -149,70 +110,91 @@ export default {
   },
   data() {
     return {
-      scrollTop: 0,
+      /**
+       * 纵向像素偏移（连续累加，逻辑上在 [0, totalHeight) 内用取模循环）
+       * 核心：offset = (offset + speed * dt) % totalHeight
+       */
+      offset: 0,
+      /** 列表可视区高度（用于 visibleCount） */
       bodyHeight: 0,
-      scrollRafId: null,
       resizeObserver: null,
-      scrollAdjustQueued: false,
-      lastCapturedScrollTop: 0
+      rafId: null,
+      lastTime: 0,
+      /** hover 时暂停 rAF，不推进 offset */
+      isHoverPaused: false,
+      /**
+       * 用于 dataList / rowHeight 变化时按比例恢复 offset（更新前缓存的总高度）
+       */
+      cachedTotalHeight: 0,
+      _offsetSyncScheduled: false
     };
   },
   computed: {
-    /** 行高取整，保证总高度为整行倍数，避免 -50% 与像素累计误差导致接缝闪烁 */
+    /** 行高取整，保证 totalHeight、取模与 translate 对齐 */
     normalizedRowHeight() {
       return Math.max(1, Math.round(Number(this.rowHeight) || 1));
     },
-    /** 原始「一份」列表总高度（像素），用于动画时长 = totalHeight / scrollSpeed（秒） */
+    /** 一份列表总高度 = 行数 * 行高；无限循环时 offset 对该值取模 */
     totalHeight() {
       return this.dataList.length * this.normalizedRowHeight;
     },
-    /** 无缝循环：两份数据首尾相接，动画只滚过「一半」高度（-50%）即是一份列表 */
-    renderList() {
-      const a = this.dataList;
-      if (!a.length) return [];
-      return a.concat(a);
+    /**
+     * 当前「逻辑」起始行下标：由像素偏移换算而来
+     * offset ∈ [0, totalHeight) ⇒ startIndex ∈ [0, n-1]
+     */
+    startIndex() {
+      const n = this.dataList.length;
+      if (!n) return 0;
+      const rh = this.normalizedRowHeight;
+      return Math.floor(this.offset / rh) % n;
     },
     /**
-     * 动画时长（秒）= 滚完「一份」内容所需时间 = 一份高度 / 速度
-     * 与 keyframes 0→-50% 配合：一个周期内位移 = 半份容器高度 = 一份列表高度
+     * 可视行数：ceil(视口高/行高) + buffer
+     * 视口高优先用 body 实测，未就绪时用 height 估算（扣表头）
      */
-    marqueeDurationSec() {
-      const th = this.totalHeight;
-      const sp = Math.max(0.0001, Number(this.scrollSpeed) || 30);
-      if (th <= 0) return 0;
-      return th / sp;
+    visibleCount() {
+      const rh = this.normalizedRowHeight;
+      const bh =
+        this.bodyHeight > 0
+          ? this.bodyHeight
+          : Math.max(rh, this.height - 44);
+      return Math.ceil(bh / rh) + BUFFER;
     },
-    marqueeInnerStyle() {
-      if (!this.autoScroll || !this.dataList.length) return {};
-      const d = this.marqueeDurationSec;
-      if (d <= 0) return {};
+    /**
+     * 虚拟窗口：从 startIndex 起连续取 visibleCount 行，下标对 n 取模实现「不复制数据」的环形衔接
+     */
+    visibleRows() {
+      const n = this.dataList.length;
+      if (!n) return [];
+      const start = this.startIndex;
+      const count = this.visibleCount;
+      const list = this.dataList;
+      const out = [];
+      for (let i = 0; i < count; i += 1) {
+        const index = (start + i) % n;
+        out.push({ row: list[index], index });
+      }
+      return out;
+    },
+    /**
+     * 行内亚像素偏移：offset % rowHeight，整段列表向上平移该值，实现行间无缝衔接
+     */
+    translateSubPx() {
+      const rh = this.normalizedRowHeight;
+      if (rh <= 0) return 0;
+      // 与 offset 同余，避免浮点误差
+      const t = this.offset - Math.floor(this.offset / rh) * rh;
+      return t;
+    },
+    /** 仅作用于当前可视行块，不做 keyframes */
+    listTransformStyle() {
+      const y = this.translateSubPx;
       return {
-        animation: `scrollY ${d}s linear infinite`
+        transform: `translate3d(0, ${-y}px, 0)`
       };
     },
     rowStyle() {
       return { height: `${this.normalizedRowHeight}px` };
-    },
-    viewport() {
-      const len = this.dataList.length;
-      const rh = this.normalizedRowHeight;
-      const bodyH = this.bodyHeight;
-      const st = this.scrollTop;
-      const startIndex =
-        len === 0 ? 0 : Math.min(Math.max(0, Math.floor(st / rh)), len - 1);
-      const visibleCount =
-        rh <= 0 ? 1 : Math.max(1, Math.ceil(bodyH / rh));
-      const endIndex = Math.min(len, startIndex + visibleCount + BUFFER);
-      const offsetY = startIndex * rh;
-      return {
-        startIndex,
-        endIndex,
-        offsetY,
-        visibleList: len === 0 ? [] : this.dataList.slice(startIndex, endIndex),
-        listTransformStyle: {
-          transform: `translate3d(0, ${offsetY}px, 0)`
-        }
-      };
     },
     columnCellStyles() {
       return this.columns.map((col) => {
@@ -232,120 +214,141 @@ export default {
   },
   watch: {
     dataList: {
-      handler: 'onDataListChange',
+      handler: 'scheduleOffsetRatioSync',
       deep: false
     },
-    'dataList.length': 'onDataListChange',
+    'dataList.length': 'scheduleOffsetRatioSync',
+    rowHeight: 'scheduleOffsetRatioSync',
     autoScroll: {
-      handler() {
-        this.$nextTick(() => {
-          if (!this.autoScroll) {
-            this.measureBody();
-          }
-          this.rebindResizeObserver();
-        });
-      }
+      handler(enabled) {
+        if (enabled) {
+          this.startAnimationLoop();
+        } else {
+          this.stopAnimationLoop();
+        }
+      },
+      immediate: false
     }
   },
   mounted() {
+    this.cachedTotalHeight = this.totalHeight;
     this.$nextTick(() => {
-      if (!this.autoScroll) {
-        this.measureBody();
-      }
+      this.measureBody();
       this.resizeObserver =
         typeof ResizeObserver !== 'undefined'
           ? new ResizeObserver(() => {
             this.measureBody();
           })
           : null;
-      this.rebindResizeObserver();
+      if (this.resizeObserver && this.$refs.bodyRef) {
+        this.resizeObserver.observe(this.$refs.bodyRef);
+      }
+      if (this.autoScroll && this.totalHeight > 0) {
+        this.startAnimationLoop();
+      }
     });
   },
   beforeDestroy() {
-    if (this.scrollRafId != null) {
-      cancelAnimationFrame(this.scrollRafId);
-      this.scrollRafId = null;
-    }
+    this.stopAnimationLoop();
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
   },
   methods: {
-    rebindResizeObserver() {
-      if (!this.resizeObserver || !this.$refs.bodyRef) return;
-      this.resizeObserver.disconnect();
-      this.resizeObserver.observe(this.$refs.bodyRef);
-    },
-    getBodyScrollTop() {
-      const el = this.$refs.bodyRef;
-      if (el) return el.scrollTop;
-      return this.scrollTop;
-    },
-    onDataListChange() {
-      if (this.autoScroll) return;
-      this.lastCapturedScrollTop = this.getBodyScrollTop();
-      if (this.scrollAdjustQueued) return;
-      this.scrollAdjustQueued = true;
-      this.$nextTick(() => {
-        this.scrollAdjustQueued = false;
-        this.applyClampedScroll(this.lastCapturedScrollTop);
-      });
-    },
-    applyClampedScroll(prevTop) {
-      this.measureBody();
+    measureBody() {
       const el = this.$refs.bodyRef;
       if (!el) return;
-      if (this.dataList.length === 0) {
-        if (el.scrollTop !== 0) el.scrollTop = 0;
-        this.scrollTop = 0;
+      const h = el.clientHeight;
+      if (h !== this.bodyHeight) {
+        this.bodyHeight = h;
+      }
+    },
+    /**
+     * dataList / length / rowHeight 可能同帧触发多次，合并为一次比例同步
+     */
+    scheduleOffsetRatioSync() {
+      if (this._offsetSyncScheduled) return;
+      this._offsetSyncScheduled = true;
+      this.$nextTick(() => {
+        this._offsetSyncScheduled = false;
+        this.applyOffsetRatioSync();
+      });
+    },
+    /**
+     * 数据或行高变化：按旧总高比例映射新 offset，避免列表跳动
+     * ratio = offset / oldTotalHeight → offset' = ratio * newTotalHeight
+     */
+    applyOffsetRatioSync() {
+      const oldTh = this.cachedTotalHeight;
+      const newTh = this.totalHeight;
+      if (oldTh > 0 && newTh > 0) {
+        this.offset = (this.offset / oldTh) * newTh;
+      }
+      if (newTh > 0) {
+        this.offset = this.offset % newTh;
+      } else {
+        this.offset = 0;
+      }
+      this.cachedTotalHeight = newTh;
+      if (this.autoScroll && newTh > 0 && this.rafId == null && !this.isHoverPaused) {
+        this.startAnimationLoop();
+      }
+    },
+    /**
+     * 自动滚动主循环：仅用 rAF + 修改 offset，禁止 scrollTop / CSS keyframes
+     */
+    tick(ts) {
+      if (!this.autoScroll) {
+        this.rafId = null;
         return;
       }
-      const maxTop = Math.max(0, this.totalHeight - el.clientHeight);
-      const nextTop = Math.min(Math.max(0, prevTop), maxTop);
-      if (el.scrollTop !== nextTop) {
-        el.scrollTop = nextTop;
+      if (this.isHoverPaused) {
+        this.rafId = null;
+        return;
       }
-      this.scrollTop = nextTop;
-    },
-    measureBody() {
-      if (this.autoScroll) return;
-      const el = this.$refs.bodyRef;
-      if (!el) return;
-      const next = el.clientHeight;
-      if (next !== this.bodyHeight) {
-        this.bodyHeight = next;
+      const th = this.totalHeight;
+      if (th <= 0 || !this.dataList.length) {
+        this.rafId = null;
+        return;
       }
+      if (!this.lastTime) {
+        this.lastTime = ts;
+      }
+      const dt = Math.min(0.064, Math.max(0, (ts - this.lastTime) / 1000));
+      this.lastTime = ts;
+      // 核心：像素累加后对 totalHeight 取模，实现无限循环且不复制数据（双模消除负数）
+      const next = this.offset + this.scrollSpeed * dt;
+      this.offset = ((next % th) + th) % th;
+      this.rafId = requestAnimationFrame((t) => this.tick(t));
     },
-    handleBodyScroll() {
-      if (this.autoScroll) return;
-      this.onScroll();
+    startAnimationLoop() {
+      if (!this.autoScroll || this.rafId != null) return;
+      if (this.totalHeight <= 0 || !this.dataList.length) return;
+      this.lastTime = 0;
+      this.rafId = requestAnimationFrame((t) => this.tick(t));
     },
-    onScroll() {
-      if (this.scrollRafId != null) return;
-      this.scrollRafId = requestAnimationFrame(() => {
-        this.scrollRafId = null;
-        const el = this.$refs.bodyRef;
-        if (el) {
-          this.scrollTop = el.scrollTop;
-        }
-      });
+    stopAnimationLoop() {
+      if (this.rafId != null) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+      this.lastTime = 0;
+    },
+    /** hover：停止 rAF（不推进 offset） */
+    onBodyMouseEnter() {
+      this.isHoverPaused = true;
+      this.stopAnimationLoop();
+    },
+    /** 离开：恢复 rAF */
+    onBodyMouseLeave() {
+      this.isHoverPaused = false;
+      if (this.autoScroll && this.totalHeight > 0) {
+        this.startAnimationLoop();
+      }
     },
     onRowClick(row, index) {
       this.$emit('row-click', row, index);
-    },
-    logicalRowIndex(renderIndex) {
-      const n = this.dataList.length;
-      if (!n) return renderIndex;
-      return renderIndex % n;
-    },
-    onMarqueeRowClick(row, renderIndex) {
-      this.$emit('row-click', row, this.logicalRowIndex(renderIndex));
-    },
-    getRenderRowKey(row, renderIndex) {
-      const logical = this.logicalRowIndex(renderIndex);
-      const base = this.getRowKey(row, logical);
-      return `${base}__dup${renderIndex}`;
     },
     getRowKey(row, index) {
       if (typeof this.rowKey === 'string' && this.rowKey) {
@@ -388,23 +391,11 @@ export default {
   color: #606266;
 }
 
-/* 手动：可滚动视口 */
 .virtual-auto-list__body {
   flex: 1;
   min-height: 0;
-  overflow: auto;
-  position: relative;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* 自动无缝滚：裁切溢出，内层整块连续内容做 transform 动画，无 scrollTop */
-.virtual-auto-list__body--marquee {
   overflow: hidden;
-}
-
-.virtual-auto-list__phantom {
-  width: 100%;
-  pointer-events: none;
+  position: relative;
 }
 
 .virtual-auto-list__list {
@@ -413,16 +404,6 @@ export default {
   right: 0;
   top: 0;
   will-change: transform;
-  contain: layout style paint;
-}
-
-.list-body-inner {
-  width: 100%;
-  will-change: transform;
-}
-
-.list-body-inner:hover {
-  animation-play-state: paused;
 }
 
 .virtual-auto-list__row {
@@ -438,7 +419,7 @@ export default {
   background-color: #ecf5ff;
 }
 
-.virtual-auto-list__row.is-last-row {
+.virtual-auto-list__row.is-last-visible {
   border-bottom: none;
 }
 
@@ -461,18 +442,5 @@ export default {
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
-}
-</style>
-
-<!-- 动画名 scrollY 需与内联 animation: scrollY ... 一致；放非 scoped 避免 Vue 改写 keyframes 名 -->
-<style>
-@keyframes scrollY {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    /* 内容高度为两份列表之和时，-50% 正好等于「一份」高度，循环与第一份起点重合，无跳变 */
-    transform: translateY(-50%);
-  }
 }
 </style>
