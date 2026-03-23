@@ -20,6 +20,8 @@ export default {
 
 <style scoped>
 .virtual-list-container-use {
-  padding: 16px;
+  height: 100vh;
+  overflow-y: auto;
+  margin: 0 auto;
 }
 </style>

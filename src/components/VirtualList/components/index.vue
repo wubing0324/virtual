@@ -74,6 +74,50 @@
         :pause-on-hover="true"
       />
     </section>
+
+    <section class="demo-section">
+      <h3 class="demo-title">
+        纯 Slot（不传 columns，纵向）
+      </h3>
+      <virtual-auto-list
+        :data-list="demoList"
+        :height="220"
+        :row-height="56"
+        :auto-scroll="true"
+        :scroll-speed="26"
+        :pause-on-hover="true"
+      >
+        <template #row="{ row, index }">
+          <div class="slot-vertical-row">
+            <span class="slot-vertical-row__name">{{ index + 1 }}. {{ row.name }}</span>
+            <span class="slot-vertical-row__status">{{ row.status }}</span>
+          </div>
+        </template>
+      </virtual-auto-list>
+    </section>
+
+    <section class="demo-section">
+      <h3 class="demo-title">
+        纯 Slot（不传 columns，横向）
+      </h3>
+      <virtual-auto-list
+        class="demo-horizontal"
+        :data-list="demoListSmall"
+        :height="120"
+        :row-height="210"
+        direction="horizontal"
+        :auto-scroll="true"
+        :scroll-speed="36"
+        :pause-on-hover="true"
+      >
+        <template #row="{ row }">
+          <div class="slot-horizontal-card">
+            <div class="slot-horizontal-card__title">{{ row.name }}</div>
+            <div class="slot-horizontal-card__meta">{{ row.status }} · {{ row.count }} 条</div>
+          </div>
+        </template>
+      </virtual-auto-list>
+    </section>
   </div>
 </template>
 
@@ -205,7 +249,8 @@ export default {
 <style scoped>
 .virtual-list-container {
   padding: 16px;
-  max-width: 960px;
+  max-width: 80vw;
+  margin: 0 auto;
 }
 
 .demo-section {
@@ -278,5 +323,50 @@ export default {
 
 .virtual-list-container >>> .demo-row-odd {
   opacity: 0.92;
+}
+
+.slot-vertical-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+
+.slot-vertical-row__name {
+  color: #303133;
+  font-size: 13px;
+}
+
+.slot-vertical-row__status {
+  color: #909399;
+  font-size: 12px;
+}
+
+.slot-horizontal-card {
+  width: calc(100% - 12px);
+  height: calc(100% - 16px);
+  margin: 8px 6px;
+  border-radius: 8px;
+  background: #f7f9fc;
+  border: 1px solid #e4e7ed;
+  padding: 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.slot-horizontal-card__title {
+  font-size: 13px;
+  color: #303133;
+  font-weight: 600;
+}
+
+.slot-horizontal-card__meta {
+  font-size: 12px;
+  color: #606266;
 }
 </style>

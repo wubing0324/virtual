@@ -4,7 +4,7 @@
     :class="rootClass"
     :style="wrapperInlineStyle"
   >
-    <div ref="headerRef" class="virtual-auto-list__header">
+    <div v-if="showHeaderAll" ref="headerRef" class="virtual-auto-list__header">
       <slot name="header">
         <div
           v-for="(col, colIndex) in columns"
@@ -166,6 +166,10 @@ export default {
     showChangeNotice: {
       type: Boolean,
       default: true
+    },
+    showHeader: {
+      type: Boolean,
+      default: true
     }
   },
   data() {
@@ -198,6 +202,9 @@ export default {
         'is-horizontal': this.isHorizontal,
         'is-vertical': !this.isHorizontal
       };
+    },
+    showHeaderAll() {
+      return this.showHeader && (this.columns && this.columns.length > 0) || !!this.$slots.header;
     },
     wrapperInlineStyle() {
       return { height: `${this.height}px` };
