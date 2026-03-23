@@ -13,10 +13,52 @@
         {{ col.label }}
       </div>
     </div>
+
+    <!--
+      自动滚动：双倍数据 + 外层 overflow:hidden + 内层 CSS 动画 translateY(0)→(-50%)
+      整段位移恰好等于「一份列表」高度，循环时首尾相接无跳变（禁止用 scrollTop 驱动自动滚）
+    -->
     <div
+      v-if="autoScroll"
+      ref="bodyRef"
+      class="virtual-auto-list__body virtual-auto-list__body--marquee"
+    >
+      <div
+        class="list-body-inner"
+        :style="marqueeInnerStyle"
+      >
+        <div
+          v-for="(row, index) in renderList"
+          :key="getRenderRowKey(row, index)"
+          class="virtual-auto-list__row"
+          :class="{ 'is-last-row': index === renderList.length - 1 }"
+          :style="rowStyle"
+          @click="onMarqueeRowClick(row, index)"
+        >
+          <div
+            v-for="(col, colIndex) in columns"
+            :key="col.prop || colIndex"
+            class="virtual-auto-list__cell"
+            :style="columnCellStyles[colIndex]"
+          >
+            <column-cell
+              v-if="col.render"
+              :column="col"
+              :row="row"
+              :index="logicalRowIndex(index)"
+            />
+            <span v-else class="virtual-auto-list__cell-text">{{ row[col.prop] }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 手动滚动：虚拟列表 + scrollTop，仅渲染可视区（与自动滚模式互斥） -->
+    <div
+      v-else
       ref="bodyRef"
       class="virtual-auto-list__body"
-      @scroll="onScroll"
+      @scroll="handleBodyScroll"
     >
       <div
         class="virtual-auto-list__phantom"
@@ -32,7 +74,7 @@
           :key="getRowKey(row, viewport.startIndex + i)"
           class="virtual-auto-list__row"
           :class="{ 'is-last-row': viewport.startIndex + i === dataList.length - 1 }"
-          :style="{ height: rowHeight + 'px' }"
+          :style="rowStyle"
           @click="onRowClick(row, viewport.startIndex + i)"
         >
           <div
@@ -112,21 +154,48 @@ export default {
       scrollRafId: null,
       resizeObserver: null,
       scrollAdjustQueued: false,
-      lastCapturedScrollTop: 0,
-      autoScrollRafId: null,
-      autoScrollLastTs: 0
+      lastCapturedScrollTop: 0
     };
   },
   computed: {
+    /** 行高取整，保证总高度为整行倍数，避免 -50% 与像素累计误差导致接缝闪烁 */
+    normalizedRowHeight() {
+      return Math.max(1, Math.round(Number(this.rowHeight) || 1));
+    },
+    /** 原始「一份」列表总高度（像素），用于动画时长 = totalHeight / scrollSpeed（秒） */
     totalHeight() {
-      return this.dataList.length * this.rowHeight;
+      return this.dataList.length * this.normalizedRowHeight;
+    },
+    /** 无缝循环：两份数据首尾相接，动画只滚过「一半」高度（-50%）即是一份列表 */
+    renderList() {
+      const a = this.dataList;
+      if (!a.length) return [];
+      return a.concat(a);
     },
     /**
-     * 合并可视区状态，减少多段 computed 链式依赖
+     * 动画时长（秒）= 滚完「一份」内容所需时间 = 一份高度 / 速度
+     * 与 keyframes 0→-50% 配合：一个周期内位移 = 半份容器高度 = 一份列表高度
      */
+    marqueeDurationSec() {
+      const th = this.totalHeight;
+      const sp = Math.max(0.0001, Number(this.scrollSpeed) || 30);
+      if (th <= 0) return 0;
+      return th / sp;
+    },
+    marqueeInnerStyle() {
+      if (!this.autoScroll || !this.dataList.length) return {};
+      const d = this.marqueeDurationSec;
+      if (d <= 0) return {};
+      return {
+        animation: `scrollY ${d}s linear infinite`
+      };
+    },
+    rowStyle() {
+      return { height: `${this.normalizedRowHeight}px` };
+    },
     viewport() {
       const len = this.dataList.length;
-      const rh = this.rowHeight || 1;
+      const rh = this.normalizedRowHeight;
       const bodyH = this.bodyHeight;
       const st = this.scrollTop;
       const startIndex =
@@ -134,7 +203,7 @@ export default {
       const visibleCount =
         rh <= 0 ? 1 : Math.max(1, Math.ceil(bodyH / rh));
       const endIndex = Math.min(len, startIndex + visibleCount + BUFFER);
-      const offsetY = startIndex * this.rowHeight;
+      const offsetY = startIndex * rh;
       return {
         startIndex,
         endIndex,
@@ -145,7 +214,6 @@ export default {
         }
       };
     },
-    /** 列宽只随 columns 变化重算，避免每行调用 cellStyle */
     columnCellStyles() {
       return this.columns.map((col) => {
         if (col.width != null) {
@@ -169,31 +237,28 @@ export default {
     },
     'dataList.length': 'onDataListChange',
     autoScroll: {
-      handler(enabled) {
-        if (enabled) {
-          this.startAutoScroll();
-        } else {
-          this.stopAutoScroll();
-        }
-      },
-      immediate: false
+      handler() {
+        this.$nextTick(() => {
+          if (!this.autoScroll) {
+            this.measureBody();
+          }
+          this.rebindResizeObserver();
+        });
+      }
     }
   },
   mounted() {
     this.$nextTick(() => {
-      this.measureBody();
+      if (!this.autoScroll) {
+        this.measureBody();
+      }
       this.resizeObserver =
         typeof ResizeObserver !== 'undefined'
           ? new ResizeObserver(() => {
             this.measureBody();
           })
           : null;
-      if (this.resizeObserver && this.$refs.bodyRef) {
-        this.resizeObserver.observe(this.$refs.bodyRef);
-      }
-      if (this.autoScroll) {
-        this.startAutoScroll();
-      }
+      this.rebindResizeObserver();
     });
   },
   beforeDestroy() {
@@ -201,19 +266,24 @@ export default {
       cancelAnimationFrame(this.scrollRafId);
       this.scrollRafId = null;
     }
-    this.stopAutoScroll();
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
   },
   methods: {
+    rebindResizeObserver() {
+      if (!this.resizeObserver || !this.$refs.bodyRef) return;
+      this.resizeObserver.disconnect();
+      this.resizeObserver.observe(this.$refs.bodyRef);
+    },
     getBodyScrollTop() {
       const el = this.$refs.bodyRef;
       if (el) return el.scrollTop;
       return this.scrollTop;
     },
     onDataListChange() {
+      if (this.autoScroll) return;
       this.lastCapturedScrollTop = this.getBodyScrollTop();
       if (this.scrollAdjustQueued) return;
       this.scrollAdjustQueued = true;
@@ -239,12 +309,17 @@ export default {
       this.scrollTop = nextTop;
     },
     measureBody() {
+      if (this.autoScroll) return;
       const el = this.$refs.bodyRef;
       if (!el) return;
       const next = el.clientHeight;
       if (next !== this.bodyHeight) {
         this.bodyHeight = next;
       }
+    },
+    handleBodyScroll() {
+      if (this.autoScroll) return;
+      this.onScroll();
     },
     onScroll() {
       if (this.scrollRafId != null) return;
@@ -256,44 +331,21 @@ export default {
         }
       });
     },
-    startAutoScroll() {
-      if (this.autoScrollRafId != null || !this.autoScroll) return;
-      this.autoScrollLastTs =
-        typeof performance !== 'undefined' ? performance.now() : Date.now();
-      const step = (ts) => {
-        if (!this.autoScroll) {
-          this.autoScrollRafId = null;
-          return;
-        }
-        const el = this.$refs.bodyRef;
-        const last = this.autoScrollLastTs;
-        this.autoScrollLastTs = ts;
-        const dt = Math.min(0.1, Math.max(0, (ts - last) / 1000));
-        if (el && this.dataList.length > 0) {
-          const maxTop = Math.max(0, this.totalHeight - el.clientHeight);
-          let next = el.scrollTop + this.scrollSpeed * dt;
-          if (maxTop <= 0) {
-            next = 0;
-          } else if (next >= maxTop) {
-            next = 0;
-          } else {
-            next = Math.min(next, maxTop);
-          }
-          el.scrollTop = next;
-          this.scrollTop = next;
-        }
-        this.autoScrollRafId = requestAnimationFrame(step);
-      };
-      this.autoScrollRafId = requestAnimationFrame(step);
-    },
-    stopAutoScroll() {
-      if (this.autoScrollRafId != null) {
-        cancelAnimationFrame(this.autoScrollRafId);
-        this.autoScrollRafId = null;
-      }
-    },
     onRowClick(row, index) {
       this.$emit('row-click', row, index);
+    },
+    logicalRowIndex(renderIndex) {
+      const n = this.dataList.length;
+      if (!n) return renderIndex;
+      return renderIndex % n;
+    },
+    onMarqueeRowClick(row, renderIndex) {
+      this.$emit('row-click', row, this.logicalRowIndex(renderIndex));
+    },
+    getRenderRowKey(row, renderIndex) {
+      const logical = this.logicalRowIndex(renderIndex);
+      const base = this.getRowKey(row, logical);
+      return `${base}__dup${renderIndex}`;
     },
     getRowKey(row, index) {
       if (typeof this.rowKey === 'string' && this.rowKey) {
@@ -322,7 +374,6 @@ export default {
   overflow: hidden;
 }
 
-/* 与 body 分离的顶栏；sticky 便于外层页面滚动时表头仍吸附在组件顶部 */
 .virtual-auto-list__header {
   display: flex;
   flex-shrink: 0;
@@ -337,12 +388,18 @@ export default {
   color: #606266;
 }
 
+/* 手动：可滚动视口 */
 .virtual-auto-list__body {
   flex: 1;
   min-height: 0;
   overflow: auto;
   position: relative;
   -webkit-overflow-scrolling: touch;
+}
+
+/* 自动无缝滚：裁切溢出，内层整块连续内容做 transform 动画，无 scrollTop */
+.virtual-auto-list__body--marquee {
+  overflow: hidden;
 }
 
 .virtual-auto-list__phantom {
@@ -359,6 +416,15 @@ export default {
   contain: layout style paint;
 }
 
+.list-body-inner {
+  width: 100%;
+  will-change: transform;
+}
+
+.list-body-inner:hover {
+  animation-play-state: paused;
+}
+
 .virtual-auto-list__row {
   display: flex;
   align-items: center;
@@ -369,7 +435,7 @@ export default {
 }
 
 .virtual-auto-list__row:hover {
-  background-color: #f5f7fa;
+  background-color: #ecf5ff;
 }
 
 .virtual-auto-list__row.is-last-row {
@@ -395,5 +461,18 @@ export default {
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
+}
+</style>
+
+<!-- 动画名 scrollY 需与内联 animation: scrollY ... 一致；放非 scoped 避免 Vue 改写 keyframes 名 -->
+<style>
+@keyframes scrollY {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    /* 内容高度为两份列表之和时，-50% 正好等于「一份」高度，循环与第一份起点重合，无跳变 */
+    transform: translateY(-50%);
+  }
 }
 </style>
