@@ -275,16 +275,30 @@ export default {
     },
     columnCellStyles() {
       return this.columns.map((col) => {
+        const align = ['left', 'center', 'right'].includes(col && col.align)
+          ? col.align
+          : 'left';
+        const alignStyle = {
+          textAlign: align,
+          justifyContent:
+            align === 'center'
+              ? 'center'
+              : align === 'right'
+                ? 'flex-end'
+                : 'flex-start'
+        };
         if (col.width != null) {
           return {
             flex: `0 0 ${col.width}px`,
             width: `${col.width}px`,
-            minWidth: 0
+            minWidth: 0,
+            ...alignStyle
           };
         }
         return {
           flex: '1 1 0',
-          minWidth: 0
+          minWidth: 0,
+          ...alignStyle
         };
       });
     },

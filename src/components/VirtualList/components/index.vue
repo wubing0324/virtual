@@ -67,7 +67,7 @@
         :data-list="demoListSmall"
         :columns="demoColumnsMini"
         :height="120"
-        :row-height="100"
+        :row-height="240"
         direction="horizontal"
         :auto-scroll="true"
         :scroll-speed="40"
@@ -100,20 +100,24 @@ export default {
       demoList,
       demoListSmall,
       demoColumns: [
-        { label: '名称', prop: 'name', width: 220 },
-        { label: '状态', prop: 'status' },
+        { label: '名称', prop: 'name', width: 220, align: 'center' },
+        { label: '状态', prop: 'status', align: 'center' },
         {
           label: '数量',
           prop: 'count',
           width: 120,
+          align: 'center',
           render(h, row) {
             return h('span', { class: 'demo-count' }, `共 ${row.count} 条`);
           }
         }
       ],
       demoColumnsMini: [
-        { label: '名称', prop: 'name', width: 120 },
-        { label: '状态', prop: 'status', width: 120 }
+        { label: '名称', prop: 'name', align: 'center',
+         render: (h, row) => {
+            return h('span', { class: 'demo-count' }, row.name);
+          }
+        }
       ],
       activeIndex: 3,
       pauseHover: true,
