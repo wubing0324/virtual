@@ -1,24 +1,22 @@
 <template>
   <div
     class="virtual-auto-list"
-    :style="{ height: height + 'px' }"
+    :class="rootClass"
+    :style="wrapperInlineStyle"
   >
-    <!-- 表头与列表区域分离，表头不参与纵向滚动 -->
     <div ref="headerRef" class="virtual-auto-list__header">
-      <div
-        v-for="(col, colIndex) in columns"
-        :key="col.prop || colIndex"
-        class="virtual-auto-list__cell virtual-auto-list__cell--header"
-        :style="columnCellStyles[colIndex]"
-      >
-        {{ col.label }}
-      </div>
+      <slot name="header">
+        <div
+          v-for="(col, colIndex) in columns"
+          :key="col.prop || colIndex"
+          class="virtual-auto-list__cell virtual-auto-list__cell--header"
+          :style="columnCellStyles[colIndex]"
+        >
+          {{ col.label }}
+        </div>
+      </slot>
     </div>
 
-    <!--
-      视口：overflow hidden，无 scrollTop 驱动；自动滚由 rAF 更新 offset + transform 完成
-      hover 时暂停 rAF
-    -->
     <div
       ref="bodyRef"
       class="virtual-auto-list__body"
@@ -27,38 +25,47 @@
     >
       <div
         class="virtual-auto-list__list"
+        :class="listClass"
         :style="listTransformStyle"
       >
+        <!--
+          斑马线：等价于 :class="['row', { 'is-striped': stripe && realIndex(i)%2===1 }]"
+          必须用 realIndex(i)%2，禁止 i%2；此处合并为 rowClassBinding 以展开 rowClassList 数组
+        -->
         <div
           v-for="(item, i) in visibleRows"
-          :key="'vr-' + i"
-          class="virtual-auto-list__row"
-          :class="{ 'is-last-visible': i === visibleRows.length - 1 }"
-          :style="rowStyle"
+          :key="stableRowDomKey(item, i)"
+          :class="rowClassBinding(item, i)"
+          :style="rowInlineStyle"
           @click="onRowClick(item.row, item.index)"
         >
-          <div
-            v-for="(col, colIndex) in columns"
-            :key="col.prop || colIndex"
-            class="virtual-auto-list__cell"
-            :style="columnCellStyles[colIndex]"
-          >
-            <column-cell
-              v-if="col.render"
-              :column="col"
-              :row="item.row"
-              :index="item.index"
-            />
-            <span v-else class="virtual-auto-list__cell-text">{{ item.row[col.prop] }}</span>
-          </div>
+          <slot name="row" :row="item.row" :index="item.index">
+            <div
+              v-for="(col, colIndex) in columns"
+              :key="col.prop || colIndex"
+              class="virtual-auto-list__cell"
+              :style="columnCellStyles[colIndex]"
+            >
+              <column-cell
+                v-if="col.render"
+                :column="col"
+                :row="item.row"
+                :index="item.index"
+              />
+              <span v-else class="virtual-auto-list__cell-text">{{ item.row[col.prop] }}</span>
+            </div>
+          </slot>
         </div>
       </div>
     </div>
+    <data-change-notice :stay-ms="1500" :transition-ms="320" ref="changeNoticeRef" />
   </div>
 </template>
 
 <script>
-/** 可视区上下多渲染的行数，减轻快速滚动时露底 */
+import { ScrollEngine } from './engine.js';
+import DataChangeNotice from './DataChangeNotice.vue';
+
 const BUFFER = 5;
 
 const ColumnCell = {
@@ -69,14 +76,17 @@ const ColumnCell = {
     index: { type: Number, required: true }
   },
   render(h, ctx) {
-    return ctx.props.column.render(h, ctx.props.row, ctx.props.index);
+    const vnode = ctx.props.column.render(h, ctx.props.row, ctx.props.index);
+    /** render 返回 undefined 时会产生非法子节点，触发 sameVnode 读 undefined.key */
+    return vnode != null ? vnode : h('span', { staticClass: 'virtual-auto-list__cell-empty' });
   }
 };
 
 export default {
   name: 'VirtualAutoList',
   components: {
-    ColumnCell
+    ColumnCell,
+    DataChangeNotice
   },
   props: {
     dataList: {
@@ -91,6 +101,7 @@ export default {
       type: Number,
       default: 300
     },
+    /** 沿滚动方向的单格尺寸：纵向=行高，横向=每列宽度 */
     rowHeight: {
       type: Number,
       default: 50
@@ -106,63 +117,125 @@ export default {
     rowKey: {
       type: [String, Function],
       default: null
+    },
+    /** vertical | horizontal */
+    direction: {
+      type: String,
+      default: 'vertical',
+      validator: (v) => v === 'vertical' || v === 'horizontal'
+    },
+    /** 鼠标进入列表是否暂停自动滚（引擎层 hover 标记） */
+    pauseOnHover: {
+      type: Boolean,
+      default: true
+    },
+    /** 高亮行逻辑下标；仅样式，不驱动滚动，也不打断引擎 */
+    activeIndex: {
+      default: null,
+      validator: (v) =>
+        v === null ||
+        v === undefined ||
+        (typeof v === 'number' && !Number.isNaN(v))
+    },
+    /** 追加行 class： (row, index) => string */
+    rowClassName: {
+      type: Function,
+      default: null
+    },
+    /** 斑马线：按真实数据索引奇偶着色（基于 realIndex，非视口下标 i） */
+    stripe: {
+      type: Boolean,
+      default: true
+    },
+    /** scrollToIndex 默认动画时长（ms） */
+    scrollToDuration: {
+      type: Number,
+      default: 500
+    },
+    /** 数据变更提示停留时长（ms） */
+    stayMs: {
+      type: Number,
+      default: 1500
+    },
+    /** 数据变更提示过渡时长（ms） */
+    transitionMs: {
+      type: Number,
+      default: 320
+    },
+    showChangeNotice: {
+      type: Boolean,
+      default: true
     }
   },
   data() {
     return {
-      /**
-       * 纵向像素偏移（连续累加，逻辑上在 [0, totalHeight) 内用取模循环）
-       * 核心：offset = (offset + speed * dt) % totalHeight
-       */
+      /** 与 ScrollEngine 同步的像素偏移（视图唯一展示源） */
       offset: 0,
-      /** 列表可视区高度（用于 visibleCount） */
-      bodyHeight: 0,
+      /** 纵向：body 高度；横向：body 宽度 */
+      bodyMainSize: 0,
       resizeObserver: null,
-      rafId: null,
-      lastTime: 0,
-      /** hover 时暂停 rAF，不推进 offset */
-      isHoverPaused: false,
+      cachedTotalLength: 0,
+      /** 合并同帧多次 dataList / length 变更 */
+      dataListSyncScheduled: false,
+      dataListSyncPendingAgain: false,
+      pendingOldListSnapshot: null,
       /**
-       * 用于 dataList / rowHeight 变化时按比例恢复 offset（更新前缓存的总高度）
+       * 上一次同步完成后的 dataList 浅拷贝，用于 push 等「同引用」场景下作为 oldList
+       * 与 prevItemSize 一起计算 oldTotalHeight
        */
-      cachedTotalHeight: 0,
-      _offsetSyncScheduled: false
+      prevListSnapshot: [],
+      prevItemSize: null,
+      engine: null
     };
   },
   computed: {
-    /** 行高取整，保证 totalHeight、取模与 translate 对齐 */
-    normalizedRowHeight() {
+    isHorizontal() {
+      return this.direction === 'horizontal';
+    },
+    rootClass() {
+      return {
+        'is-horizontal': this.isHorizontal,
+        'is-vertical': !this.isHorizontal
+      };
+    },
+    wrapperInlineStyle() {
+      return { height: `${this.height}px` };
+    },
+    listClass() {
+      return {
+        'is-horizontal': this.isHorizontal,
+        'is-vertical': !this.isHorizontal
+      };
+    },
+    /** 滚动方向上的单格像素，取整避免取模与 transform 漂移 */
+    normalizedItemSize() {
       return Math.max(1, Math.round(Number(this.rowHeight) || 1));
     },
-    /** 一份列表总高度 = 行数 * 行高；无限循环时 offset 对该值取模 */
-    totalHeight() {
-      return this.dataList.length * this.normalizedRowHeight;
+    /** 一份数据轨道总长 = n * itemSize（无限循环取模基准） */
+    totalTrackLength() {
+      return this.dataList.length * this.normalizedItemSize;
     },
-    /**
-     * 当前「逻辑」起始行下标：由像素偏移换算而来
-     * offset ∈ [0, totalHeight) ⇒ startIndex ∈ [0, n-1]
-     */
     startIndex() {
       const n = this.dataList.length;
       if (!n) return 0;
-      const rh = this.normalizedRowHeight;
-      return Math.floor(this.offset / rh) % n;
+      const size = this.normalizedItemSize;
+      return Math.floor(this.offset / size) % n;
     },
-    /**
-     * 可视行数：ceil(视口高/行高) + buffer
-     * 视口高优先用 body 实测，未就绪时用 height 估算（扣表头）
-     */
+    /** 视口主轴能容纳的格数 + buffer（纵向用高，横向用宽） */
     visibleCount() {
-      const rh = this.normalizedRowHeight;
-      const bh =
-        this.bodyHeight > 0
-          ? this.bodyHeight
-          : Math.max(rh, this.height - 44);
-      return Math.ceil(bh / rh) + BUFFER;
+      const size = this.normalizedItemSize;
+      const main =
+        this.bodyMainSize > 0
+          ? this.bodyMainSize
+          : Math.max(
+            size,
+            this.isHorizontal
+              ? this.height
+              : Math.max(size, this.height - 44)
+          );
+      return Math.ceil(main / size) + BUFFER;
     },
-    /**
-     * 虚拟窗口：从 startIndex 起连续取 visibleCount 行，下标对 n 取模实现「不复制数据」的环形衔接
-     */
+    /** 环形虚拟窗口：下标取模，不复制 dataList */
     visibleRows() {
       const n = this.dataList.length;
       if (!n) return [];
@@ -176,25 +249,29 @@ export default {
       }
       return out;
     },
-    /**
-     * 行内亚像素偏移：offset % rowHeight，整段列表向上平移该值，实现行间无缝衔接
-     */
     translateSubPx() {
-      const rh = this.normalizedRowHeight;
-      if (rh <= 0) return 0;
-      // 与 offset 同余，避免浮点误差
-      const t = this.offset - Math.floor(this.offset / rh) * rh;
-      return t;
+      const size = this.normalizedItemSize;
+      if (size <= 0) return 0;
+      return this.offset - Math.floor(this.offset / size) * size;
     },
-    /** 仅作用于当前可视行块，不做 keyframes */
+    /** 主轴 transform：纵向平移 Y，横向平移 X */
     listTransformStyle() {
-      const y = this.translateSubPx;
-      return {
-        transform: `translate3d(0, ${-y}px, 0)`
-      };
+      const sub = this.translateSubPx;
+      if (this.isHorizontal) {
+        return { transform: `translate3d(${-sub}px, 0, 0)` };
+      }
+      return { transform: `translate3d(0, ${-sub}px, 0)` };
     },
-    rowStyle() {
-      return { height: `${this.normalizedRowHeight}px` };
+    rowInlineStyle() {
+      const s = this.normalizedItemSize;
+      if (this.isHorizontal) {
+        return {
+          width: `${s}px`,
+          height: '100%',
+          flexShrink: 0
+        };
+      }
+      return { height: `${s}px` };
     },
     columnCellStyles() {
       return this.columns.map((col) => {
@@ -210,30 +287,40 @@ export default {
           minWidth: 0
         };
       });
+    },
+    dataListLength() {
+      return Array.isArray(this.dataList) ? this.dataList.length : 0;
     }
   },
   watch: {
     dataList: {
-      handler: 'scheduleOffsetRatioSync',
+      handler(newVal, oldVal) {
+        this.scheduleDataListOffsetSync(oldVal);
+      },
       deep: false
     },
-    'dataList.length': 'scheduleOffsetRatioSync',
-    rowHeight: 'scheduleOffsetRatioSync',
-    autoScroll: {
-      handler(enabled) {
-        if (enabled) {
-          this.startAnimationLoop();
-        } else {
-          this.stopAnimationLoop();
-        }
-      },
-      immediate: false
+    dataListLength() {
+      /** 同引用 push/splice 时 shallow 的 dataList 可能不触发，仅靠 length */
+      this.scheduleDataListOffsetSync(null);
+    },
+    rowHeight: 'onRowHeightChange',
+    scrollSpeed(val) {
+      if (this.engine) this.engine.setScrollSpeed(val);
+    },
+    autoScroll(val) {
+      if (this.engine) this.engine.setAutoScroll(val);
+    },
+    pauseOnHover() {
+      /* 仅影响后续 hover；当前若已暂停需用户移出再进 */
     }
   },
   mounted() {
-    this.cachedTotalHeight = this.totalHeight;
+    this.cachedTotalLength = this.totalTrackLength;
+    this.prevListSnapshot = (this.dataList || []).slice();
+    this.prevItemSize = this.normalizedItemSize;
     this.$nextTick(() => {
       this.measureBody();
+      this.initEngine();
       this.resizeObserver =
         typeof ResizeObserver !== 'undefined'
           ? new ResizeObserver(() => {
@@ -243,124 +330,251 @@ export default {
       if (this.resizeObserver && this.$refs.bodyRef) {
         this.resizeObserver.observe(this.$refs.bodyRef);
       }
-      if (this.autoScroll && this.totalHeight > 0) {
-        this.startAnimationLoop();
+      if (this.autoScroll && this.totalTrackLength > 0) {
+        this.engine.start();
       }
     });
   },
   beforeDestroy() {
-    this.stopAnimationLoop();
+    if (this.engine) {
+      this.engine.destroy();
+      this.engine = null;
+    }
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
   },
   methods: {
+    notifyChange(type, text) {
+      if (!this.showChangeNotice) return;
+      const ref = this.$refs.changeNoticeRef;
+      if (!ref || !text) return;
+      if (type === 'add') ref.notifyAdd(text);
+      else ref.notifyRemove(text);
+    },
+    /** 创建引擎：getter 闭包读取当前组件状态，便于扩展 */
+    initEngine() {
+      this.engine = new ScrollEngine({
+        getTotalLength: () => this.totalTrackLength,
+        getItemSize: () => this.normalizedItemSize,
+        getItemCount: () => this.dataList.length,
+        scrollSpeed: this.scrollSpeed,
+        onUpdate: (o) => {
+          this.offset = o;
+        },
+        onSmoothEnd: () => {
+          this.$emit('scroll-end');
+        }
+      });
+      this.engine.setOffset(this.offset);
+      this.engine.setAutoScroll(this.autoScroll);
+    },
     measureBody() {
       const el = this.$refs.bodyRef;
       if (!el) return;
-      const h = el.clientHeight;
-      if (h !== this.bodyHeight) {
-        this.bodyHeight = h;
+      const next = this.isHorizontal ? el.clientWidth : el.clientHeight;
+      if (next !== this.bodyMainSize) {
+        this.bodyMainSize = next;
       }
     },
     /**
-     * dataList / length / rowHeight 可能同帧触发多次，合并为一次比例同步
+     * dataList 引用变化或 length 变化时调度；oldList 优先用 watch 的 oldVal，否则用 _prevListSnapshot
      */
-    scheduleOffsetRatioSync() {
-      if (this._offsetSyncScheduled) return;
-      this._offsetSyncScheduled = true;
+    scheduleDataListOffsetSync(oldValFromWatch) {
+      const oldListSnapshot = Array.isArray(oldValFromWatch)
+        ? oldValFromWatch.slice()
+        : this.prevListSnapshot.slice();
+      if (this.dataListSyncScheduled) {
+        if (!this.pendingOldListSnapshot) {
+          this.pendingOldListSnapshot = oldListSnapshot;
+        }
+        this.dataListSyncPendingAgain = true;
+        return;
+      }
+      this.pendingOldListSnapshot = oldListSnapshot;
+      this.dataListSyncScheduled = true;
       this.$nextTick(() => {
-        this._offsetSyncScheduled = false;
-        this.applyOffsetRatioSync();
+        this.dataListSyncScheduled = false;
+        const oldList = this.pendingOldListSnapshot
+          ? this.pendingOldListSnapshot.slice()
+          : this.prevListSnapshot.slice();
+        this.pendingOldListSnapshot = null;
+        const newList = (this.dataList || []).slice();
+        this.applyDataListOffsetSync(oldList);
+        this.prevListSnapshot = newList.slice();
+        this.prevItemSize = this.normalizedItemSize;
+        this.cachedTotalLength = this.totalTrackLength;
+        if (this.autoScroll && this.totalTrackLength > 0) {
+          this.engine.start();
+        }
+        if (this.dataListSyncPendingAgain) {
+          this.dataListSyncPendingAgain = false;
+          this.scheduleDataListOffsetSync(null);
+        }
       });
     },
-    /**
-     * 数据或行高变化：按旧总高比例映射新 offset，避免列表跳动
-     * ratio = offset / oldTotalHeight → offset' = ratio * newTotalHeight
-     */
-    applyOffsetRatioSync() {
-      const oldTh = this.cachedTotalHeight;
-      const newTh = this.totalHeight;
-      if (oldTh > 0 && newTh > 0) {
-        this.offset = (this.offset / oldTh) * newTh;
-      }
-      if (newTh > 0) {
-        this.offset = this.offset % newTh;
-      } else {
-        this.offset = 0;
-      }
-      this.cachedTotalHeight = newTh;
-      if (this.autoScroll && newTh > 0 && this.rafId == null && !this.isHoverPaused) {
-        this.startAnimationLoop();
-      }
+    /** 仅行高变化：old/new 同一条数据，用比例或锚点下标保持视觉位置 */
+    onRowHeightChange() {
+      this.scheduleDataListOffsetSync(this.dataList);
     },
     /**
-     * 自动滚动主循环：仅用 rAF + 修改 offset，禁止 scrollTop / CSS keyframes
+     * 数据动态增删：优先按「当前视口首行」锚点在 id / rowKey 上对齐；失败则比例回退；再尝试邻行锚点
+     * 禁止无故 offset=0；最终对 newTotalLength 取模防越界，不中断自动滚（仍由引擎 start 恢复）
      */
-    tick(ts) {
-      if (!this.autoScroll) {
-        this.rafId = null;
+    applyDataListOffsetSync(oldList) {
+      if (!this.engine) return;
+      const newList = this.dataList || [];
+      const newSz = this.normalizedItemSize;
+      const oldSz = this.prevItemSize != null ? this.prevItemSize : newSz;
+      const oldN = oldList ? oldList.length : 0;
+      const newN = newList.length;
+      const oldTotal = oldN * oldSz;
+      const newTotal = newN * newSz;
+
+      if (newTotal <= 0) {
+        this.engine.setOffset(0);
         return;
       }
-      if (this.isHoverPaused) {
-        this.rafId = null;
+      if (oldN <= 0 || oldTotal <= 0) {
+        this.engine.setOffset(((this.offset % newTotal) + newTotal) % newTotal);
         return;
       }
-      const th = this.totalHeight;
-      if (th <= 0 || !this.dataList.length) {
-        this.rafId = null;
-        return;
+
+      const oldStart = Math.floor(this.offset / oldSz) % oldN;
+      const subOld =
+        this.offset - Math.floor(this.offset / oldSz) * oldSz;
+
+      let nextOffset = this.tryAnchorOffset(oldList, oldStart, oldSz, newList, newSz, subOld);
+
+      if (nextOffset == null) {
+        const ratio = this.offset / oldTotal;
+        nextOffset = ratio * newTotal;
       }
-      if (!this.lastTime) {
-        this.lastTime = ts;
+
+      nextOffset = ((nextOffset % newTotal) + newTotal) % newTotal;
+      this.engine.setOffset(nextOffset);
+    },
+    /**
+     * 方式2：当前首行对应数据在新列表中的下标 → offset = newIndex * newSz + sub（不超过一格）
+     * 找不到则邻行尝试；仍找不到返回 null 走比例
+     */
+    tryAnchorOffset(oldList, oldStart, oldSz, newList, newSz, subOld) {
+      const newN = newList.length;
+      if (!newN) return null;
+      const maxSub = Math.max(0, newSz - 1e-6);
+      const sub = Math.min(Math.max(0, subOld), maxSub);
+      const deltas = [0, -1, 1, -2, 2, -3, 3];
+      for (let k = 0; k < deltas.length; k += 1) {
+        const idx = oldStart + deltas[k];
+        if (idx < 0 || idx >= oldList.length) continue;
+        const row = oldList[idx];
+        const ni = this.findRowIndexInNewList(row, newList);
+        if (ni >= 0) {
+          return ni * newSz + sub;
+        }
       }
-      const dt = Math.min(0.064, Math.max(0, (ts - this.lastTime) / 1000));
-      this.lastTime = ts;
-      // 核心：像素累加后对 totalHeight 取模，实现无限循环且不复制数据（双模消除负数）
-      const next = this.offset + this.scrollSpeed * dt;
-      this.offset = ((next % th) + th) % th;
-      this.rafId = requestAnimationFrame((t) => this.tick(t));
+      return null;
     },
-    startAnimationLoop() {
-      if (!this.autoScroll || this.rafId != null) return;
-      if (this.totalHeight <= 0 || !this.dataList.length) return;
-      this.lastTime = 0;
-      this.rafId = requestAnimationFrame((t) => this.tick(t));
-    },
-    stopAnimationLoop() {
-      if (this.rafId != null) {
-        cancelAnimationFrame(this.rafId);
-        this.rafId = null;
+    /** 用 id 优先，其次 rowKey 字段匹配 */
+    findRowIndexInNewList(row, newList) {
+      if (!row || !newList.length) return -1;
+      if (row.id != null) {
+        const i = newList.findIndex((r) => r && r.id === row.id);
+        if (i >= 0) return i;
       }
-      this.lastTime = 0;
+      if (typeof this.rowKey === 'string' && this.rowKey) {
+        const keyVal = row[this.rowKey];
+        if (keyVal != null) {
+          const i = newList.findIndex(
+            (r) => r && r[this.rowKey] === keyVal
+          );
+          if (i >= 0) return i;
+        }
+      }
+      return -1;
     },
-    /** hover：停止 rAF（不推进 offset） */
+    /**
+     * 行节点 key：带视口下标 i，避免环形重复行时 id 重复导致 patch 异常
+     *（同一 row 可能在 visibleRows 中出现多次）
+     */
+    stableRowDomKey(item, i) {
+      if (!item) {
+        return `vr-fallback-${i}`;
+      }
+      const row = item.row;
+      if (row && row.id != null) {
+        return `id-${row.id}-v${i}`;
+      }
+      if (typeof this.rowKey === 'string' && row && row[this.rowKey] != null) {
+        return `${this.rowKey}-${row[this.rowKey]}-v${i}`;
+      }
+      return `vr-${item.index}-${i}`;
+    },
     onBodyMouseEnter() {
-      this.isHoverPaused = true;
-      this.stopAnimationLoop();
+      if (!this.pauseOnHover || !this.engine) return;
+      this.engine.setHoverPaused(true);
     },
-    /** 离开：恢复 rAF */
     onBodyMouseLeave() {
-      this.isHoverPaused = false;
-      if (this.autoScroll && this.totalHeight > 0) {
-        this.startAnimationLoop();
-      }
+      if (!this.engine) return;
+      this.engine.setHoverPaused(false);
+    },
+    /**
+     * 对外 API：平滑滚到指定逻辑行（easeInOut 在引擎内）
+     * @param {number} index
+     * @param {number} [durationMs]
+     */
+    scrollToIndex(index, durationMs) {
+      if (!this.engine) return;
+      const d =
+        durationMs != null ? durationMs : this.scrollToDuration;
+      this.engine.scrollToIndex(index, d);
+    },
+    /** 业务暂停自动滚（与 hover 无关，需 resume 恢复） */
+    pause() {
+      if (this.engine) this.engine.pause();
+    },
+    resume() {
+      if (this.engine) this.engine.resume();
     },
     onRowClick(row, index) {
       this.$emit('row-click', row, index);
     },
-    getRowKey(row, index) {
-      if (typeof this.rowKey === 'string' && this.rowKey) {
-        const k = row[this.rowKey];
-        return k != null ? k : `__row_${index}`;
+    /**
+     * 真实数据行下标（与 item.index 一致）：(startIndex + i) % dataList.length
+     * 用于斑马线奇偶，避免仅用视口 i 导致循环滚动时颜色跳变
+     */
+    realIndex(i) {
+      const n = this.dataList.length;
+      if (!n) return 0;
+      return (this.startIndex + i) % n;
+    },
+    /**
+     * 行 class：BEM + row + 扩展 + { is-striped }（stripe 且 realIndex 为奇数）
+     */
+    rowClassBinding(item, i) {
+      return [
+        'virtual-auto-list__row',
+        'row',
+        ...this.rowClassList(item, i),
+        { 'is-striped': this.stripe && this.realIndex(i) % 2 === 1 }
+      ];
+    },
+    rowClassList(item, i) {
+      const list = [];
+      if (this.activeIndex != null && this.activeIndex === item.index) {
+        list.push('virtual-auto-list__row--active');
       }
-      if (typeof this.rowKey === 'function') {
-        return this.rowKey(row, index);
+      if (this.rowClassName) {
+        const extra = this.rowClassName(item.row, item.index);
+        if (extra) {
+          extra.split(/\s+/).forEach((c) => c && list.push(c));
+        }
       }
-      if (row && row.id != null) return row.id;
-      if (row && row.key != null) return row.key;
-      return `__row_${index}`;
+      if (i === this.visibleRows.length - 1) {
+        list.push('is-last-visible');
+      }
+      return list;
     }
   }
 };
@@ -394,6 +608,7 @@ export default {
 .virtual-auto-list__body {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
   position: relative;
 }
@@ -401,26 +616,66 @@ export default {
 .virtual-auto-list__list {
   position: absolute;
   left: 0;
-  right: 0;
   top: 0;
   will-change: transform;
+  display: flex;
+}
+
+.virtual-auto-list__list.is-vertical {
+  flex-direction: column;
+  right: 0;
+}
+
+.virtual-auto-list__list.is-horizontal {
+  flex-direction: row;
+  height: 100%;
+  bottom: 0;
 }
 
 .virtual-auto-list__row {
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  border-bottom: 1px solid #ebeef5;
   cursor: pointer;
   transition: background-color 0.15s ease;
+}
+
+/* 斑马线：按真实数据索引奇偶，与无限循环 offset 一致，不随视口 i 闪烁 */
+.row.is-striped {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.is-vertical .virtual-auto-list__row {
+  border-bottom: 1px solid #ebeef5;
+}
+
+.is-horizontal .virtual-auto-list__row {
+  border-right: 1px solid #ebeef5;
+  border-bottom: none;
 }
 
 .virtual-auto-list__row:hover {
   background-color: #ecf5ff;
 }
 
-.virtual-auto-list__row.is-last-visible {
+.virtual-auto-list__row--active {
+  background-color: #e6f7ff;
+}
+
+.is-vertical .virtual-auto-list__row--active {
+  box-shadow: inset 3px 0 0 #409eff;
+}
+
+.is-horizontal .virtual-auto-list__row--active {
+  box-shadow: inset 0 3px 0 0 #409eff;
+}
+
+.is-vertical .virtual-auto-list__row.is-last-visible {
   border-bottom: none;
+}
+
+.is-horizontal .virtual-auto-list__row.is-last-visible {
+  border-right: none;
 }
 
 .virtual-auto-list__cell {
