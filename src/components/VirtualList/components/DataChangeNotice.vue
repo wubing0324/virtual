@@ -79,7 +79,7 @@ export default {
     },
     buildText(type, text) {
       const label = String(text || '未知数据');
-      return type === 'add' ? `新增：${label}` : `删除：${label}`;
+      return label;
     },
     onTransitionEnd(ev, item) {
       if (!item || ev.target !== ev.currentTarget) return;

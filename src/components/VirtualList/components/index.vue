@@ -155,14 +155,14 @@ export default {
         count: 0
       };
       this.demoList.push(row);
-      this.notifyChange('add', `尾部插入 #${id}`);
+      this.notifyChange('add', `车辆驶入 #${id}`);
       this.lastEvent = `insert 尾部，id=${id}，总条数=${this.demoList.length}`;
     },
     /** 测试动态数据：尾部删除 */
     removeRow() {
       if (this.demoList.length === 0) return;
       const removed = this.demoList.pop();
-      this.notifyChange('remove', `尾部删除 #${removed.id}`);
+      this.notifyChange('remove', `车辆离开 #${removed.id}`);
       this.lastEvent = `remove 尾部，id=${removed.id}，总条数=${this.demoList.length}`;
     },
     notifyChange(type, text) {
