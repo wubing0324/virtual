@@ -22,6 +22,7 @@
       class="virtual-auto-list__body"
       @mouseenter="onBodyMouseEnter"
       @mouseleave="onBodyMouseLeave"
+      @wheel.prevent="onBodyWheel"
     >
       <div
         class="virtual-auto-list__list"
@@ -532,6 +533,22 @@ export default {
     onBodyMouseLeave() {
       if (!this.engine) return;
       this.engine.setHoverPaused(false);
+    },
+    /**
+     * 手动滚动（不显示原生滚动条）：
+     * - vertical: 使用 deltaY
+     * - horizontal: 优先 deltaX，没有时回退 deltaY
+     */
+    onBodyWheel(ev) {
+      const delta = this.isHorizontal
+        ? (Math.abs(ev.deltaX) > 0 ? ev.deltaX : ev.deltaY)
+        : ev.deltaY;
+      if (!delta) return;
+      if (this.engine) {
+        this.engine.setOffset(this.offset + delta);
+      } else {
+        this.offset += delta;
+      }
     },
     /**
      * 对外 API：平滑滚到指定逻辑行（easeInOut 在引擎内）
