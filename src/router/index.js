@@ -70,6 +70,14 @@ export const routes = [
       title: 'OBB结果',
     },
   },
+  {
+    path: '/virtualList',
+    name: 'VirtualList',
+    component: () => import('@/components/VirtualList/index.vue'),
+    meta: {
+      title: '虚拟列表',
+    },
+  },
 ];
 
 const router = new VueRouter({
