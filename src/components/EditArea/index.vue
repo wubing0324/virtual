@@ -17,15 +17,28 @@
       <div class="area-b">
         <div class="area-header">
           <span>工具面板 (B区)</span>
-          <button 
-            class="export-btn" 
-            @click="exportData"
-            :disabled="recognizedSpaces.length === 0"
-            title="导出识别结果"
-          >
-            <span class="icon">⬇</span>
-            <span class="text">导出JSON</span>
-          </button>
+          <div class="area-header-actions">
+            <button 
+              class="export-btn" 
+              type="button"
+              @click="openParkingPreview"
+              :disabled="recognizedSpaces.length === 0"
+              title="预览与导出一致的车位 JSON 画布"
+            >
+              <span class="icon">👁</span>
+              <span class="text">预览</span>
+            </button>
+            <button 
+              class="export-btn" 
+              type="button"
+              @click="exportData"
+              :disabled="recognizedSpaces.length === 0"
+              title="导出识别结果"
+            >
+              <span class="icon">⬇</span>
+              <span class="text">导出JSON</span>
+            </button>
+          </div>
         </div>
         
         <!-- Tab 切换 -->
@@ -263,6 +276,27 @@
       @delete-object="handleDeleteObject"
       @close="handleSelectionCleared"
     />
+
+    <!-- 车位画布预览（与导出 JSON 数据一致） -->
+    <div
+      v-if="previewVisible"
+      class="parking-preview-overlay"
+      @click.self="closeParkingPreview"
+    >
+      <div class="parking-preview-modal" role="dialog" aria-modal="true" aria-labelledby="parking-preview-title">
+        <div class="parking-preview-header">
+          <span id="parking-preview-title">车位预览</span>
+          <button type="button" class="parking-preview-close" @click="closeParkingPreview" title="关闭">×</button>
+        </div>
+        <div class="parking-preview-body">
+          <ParkingSpaceCanvasContainer
+            v-if="previewPayload"
+            :json-data="previewPayload"
+            :preview-mode="true"
+          />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -270,6 +304,7 @@
 import CanvasArea from './CanvasArea.vue';
 import ShapeLibrary from './ShapeLibrary.vue';
 import EditPanel from './EditPanel.vue';
+import ParkingSpaceCanvasContainer from '@/components/parkingSpace/index.vue';
 
 export default {
   name: 'EditArea',
@@ -277,6 +312,7 @@ export default {
     CanvasArea,
     ShapeLibrary,
     EditPanel,
+    ParkingSpaceCanvasContainer,
   },
   data() {
     return {
@@ -319,6 +355,9 @@ export default {
       // 面板收起状态
       recognitionControlsCollapsed: false,
       filterGroupCollapsed: false,
+
+      previewVisible: false,
+      previewPayload: null,
     };
   },
   computed: {
@@ -448,22 +487,21 @@ export default {
         this.selectedObject = null;
     },
     
-    async exportData() {
+    /** 构建与「导出 JSON」完全一致的数据对象；无数据时 alert 并返回 null */
+    async buildExportPayload() {
         if (!this.allRecognizedSpaces || this.allRecognizedSpaces.length === 0) {
             alert('没有可导出的数据，请先进行识别');
-            return;
+            return null;
         }
-        
+
         // 获取图片尺寸
         let imageWidth = 0;
         let imageHeight = 0;
-        
+
         if (this.canvas) {
-            // 方法1: 从 canvas 尺寸获取（如果图片已加载，canvas 尺寸就是图片尺寸）
             imageWidth = this.canvas.width || 0;
             imageHeight = this.canvas.height || 0;
-            
-            // 方法2: 如果 canvas 尺寸为 0，尝试从背景图片对象获取
+
             if (imageWidth === 0 || imageHeight === 0) {
                 const objects = this.canvas.getObjects();
                 const backgroundImg = objects.find(obj => obj.type === 'image' && !obj.selectable);
@@ -472,8 +510,7 @@ export default {
                     imageHeight = backgroundImg.height || 0;
                 }
             }
-            
-            // 方法3: 如果还是获取不到，从图片 URL 加载获取
+
             if ((imageWidth === 0 || imageHeight === 0) && this.imageUrl) {
                 try {
                     const img = new Image();
@@ -492,19 +529,15 @@ export default {
                 }
             }
         }
-        
-        // 从画布获取最新的数据（包括用户手动调整后的位置、大小等）
+
         const updatedSpaces = this.allRecognizedSpaces.map(space => {
-            // 尝试从画布上获取最新的对象数据
             let fabricObj = null;
             if (this.canvas && space.id) {
                 const objects = this.canvas.getObjects();
                 fabricObj = objects.find(obj => obj.id === space.id);
             }
-            
-            // 如果找到了画布对象，使用画布上的最新数据
+
             if (fabricObj) {
-                // 使用 getBoundingRect 获取准确的边界框（考虑旋转、缩放、中心点定位等）
                 const bounds = fabricObj.getBoundingRect();
                 const width = bounds.width;
                 const height = bounds.height;
@@ -512,7 +545,7 @@ export default {
                 const centerY = bounds.top + height / 2;
                 const x = bounds.left;
                 const y = bounds.top;
-                
+
                 return {
                     id: space.id,
                     spaceCode: fabricObj.parkingNumber || space.number || null,
@@ -528,12 +561,11 @@ export default {
                     rotatedWidth: width,
                     rotatedHeight: height,
                     vertices: space.vertices || null,
-                    shapeType: space.shapeType || null, // 保留图形类型信息
-                    label: fabricObj.label || null, // 附加标签信息
+                    shapeType: space.shapeType || null,
+                    label: fabricObj.label || null,
                 };
             }
-            
-            // 否则使用原始数据
+
             return {
                 id: space.id,
                 spaceCode: space.number || null,
@@ -549,14 +581,12 @@ export default {
                 rotatedWidth: space.rotatedWidth,
                 rotatedHeight: space.rotatedHeight,
                 vertices: space.vertices || null,
-                shapeType: space.shapeType || null, // 保留图形类型信息
-                label: space.label || null, // 附加标签信息
+                shapeType: space.shapeType || null,
+                label: space.label || null,
             };
         });
-        
-        // 收集所有需要导出的数据
-        const exportData = {
-            // 识别配置
+
+        return {
             recognitionConfig: {
                 borderColor: this.recognitionConfig.borderColor,
                 imgsz: this.recognitionConfig.imgsz,
@@ -570,17 +600,12 @@ export default {
                 textNumberOffsetX: this.recognitionConfig.textNumberOffsetX,
                 textNumberOffsetY: this.recognitionConfig.textNumberOffsetY,
             },
-            
-            // 车位数据（包含用户编辑后的最新数据）
             spaces: updatedSpaces,
-            
-            // 统计信息
             statistics: {
                 totalSpaces: this.allRecognizedSpaces.length,
                 filteredSpaces: this.recognizedSpaces.length,
                 exportDate: new Date().toLocaleString('zh-CN'),
             },
-            // 元数据
             metadata: {
                 exportTime: new Date().toISOString(),
                 version: '1.0',
@@ -591,8 +616,25 @@ export default {
                 },
             }
         };
-        
-        // 转换为 JSON 字符串
+    },
+
+    async openParkingPreview() {
+        const payload = await this.buildExportPayload();
+        if (!payload) return;
+        this.previewPayload = payload;
+        console.log('previewPayload', this.previewPayload);
+        this.previewVisible = true;
+    },
+
+    closeParkingPreview() {
+        this.previewVisible = false;
+        this.previewPayload = null;
+    },
+
+    async exportData() {
+        const exportData = await this.buildExportPayload();
+        if (!exportData) return;
+
         const jsonString = JSON.stringify(exportData, null, 2);
         
         // 创建下载链接
@@ -1581,6 +1623,13 @@ export default {
   gap: 10px;
 }
 
+.area-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .export-btn {
   display: inline-flex;
   align-items: center;
@@ -1614,6 +1663,59 @@ export default {
 
 .export-btn .text {
   font-size: 12px;
+}
+
+.parking-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.parking-preview-modal {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  max-width: min(1480px, 96vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.parking-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid #ddd;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.parking-preview-close {
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+  padding: 0 4px;
+}
+
+.parking-preview-close:hover {
+  color: #333;
+}
+
+.parking-preview-body {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .tab-container {
