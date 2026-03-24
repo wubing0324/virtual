@@ -147,8 +147,8 @@ export default {
             confidence: 1.0,
             xyxyxyxy: xyxyxyxy,
             xywhr: {
-              center_x: space.centerX || space.x,
-              center_y: space.centerY || space.y,
+              center_x: (space.centerX ?? ((space.x ?? 0) + (space.width ?? 0) / 2)),
+              center_y: (space.centerY ?? ((space.y ?? 0) + (space.height ?? 0) / 2)),
               width: space.width,
               height: space.height,
               angle_rad: angleRad,
@@ -434,8 +434,8 @@ export default {
     },
     // 如果没有 vertices，从矩形参数计算四个顶点
     calculateVerticesFromRect(space) {
-      const cx = space.centerX || space.x;
-      const cy = space.centerY || space.y;
+      const cx = space.centerX ?? ((space.x ?? 0) + (space.width ?? 0) / 2);
+      const cy = space.centerY ?? ((space.y ?? 0) + (space.height ?? 0) / 2);
       const w = space.width || 0;
       const h = space.height || 0;
       const angle = (space.angle || 0) * Math.PI / 180;

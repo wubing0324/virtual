@@ -545,6 +545,9 @@ export default {
                 const centerY = bounds.top + height / 2;
                 const x = bounds.left;
                 const y = bounds.top;
+                const vertices = typeof fabricObj.getCoords === 'function'
+                    ? fabricObj.getCoords().map(p => ({ x: p.x, y: p.y }))
+                    : (space.vertices || null);
 
                 return {
                     id: space.id,
@@ -560,7 +563,7 @@ export default {
                     area: width * height,
                     rotatedWidth: width,
                     rotatedHeight: height,
-                    vertices: space.vertices || null,
+                    vertices: vertices,
                     shapeType: space.shapeType || null,
                     label: fabricObj.label || null,
                 };
@@ -927,9 +930,54 @@ export default {
       this.selectedObject = null;
       this.selectedSpaceIndex = null;
     },
+    syncSpaceFromFabricObject(fabricObj) {
+      if (!fabricObj || !fabricObj.id || !this.canvas) return;
+      if (typeof fabricObj.setCoords === 'function') {
+        fabricObj.setCoords();
+      }
+      const bounds = fabricObj.getBoundingRect();
+      const width = bounds.width;
+      const height = bounds.height;
+      const centerX = bounds.left + width / 2;
+      const centerY = bounds.top + height / 2;
+      const x = bounds.left;
+      const y = bounds.top;
+      const vertices = typeof fabricObj.getCoords === 'function'
+        ? fabricObj.getCoords().map(p => ({ x: p.x, y: p.y }))
+        : null;
+      const patch = {
+        number: fabricObj.parkingNumber || null,
+        spaceCode: fabricObj.parkingNumber || null,
+        x,
+        y,
+        centerX,
+        centerY,
+        width,
+        height,
+        angle: fabricObj.angle || 0,
+        fill: fabricObj.fill || null,
+        area: width * height,
+        rotatedWidth: width,
+        rotatedHeight: height,
+        vertices,
+      };
+      const updateList = (list) => {
+        const target = list.find(s => s.id === fabricObj.id);
+        if (target) Object.assign(target, patch);
+      };
+      updateList(this.allRecognizedSpaces);
+      updateList(this.recognizedSpaces);
+    },
+    async refreshPreviewIfVisible() {
+      if (!this.previewVisible) return;
+      const payload = await this.buildExportPayload();
+      if (payload) this.previewPayload = payload;
+    },
     handleObjectModified(updatedData) {
       if (this.selectedObject) {
         Object.assign(this.selectedObject, updatedData);
+        this.syncSpaceFromFabricObject(this.selectedObject.fabricObject);
+        this.refreshPreviewIfVisible();
       }
     },
     handleShapeCreated(shapeData) {
@@ -946,6 +994,9 @@ export default {
       const centerY = bounds.top + height / 2;
       const x = bounds.left; // 左上角 x
       const y = bounds.top;  // 左上角 y
+      const vertices = typeof fabricObject.getCoords === 'function'
+        ? fabricObject.getCoords().map(p => ({ x: p.x, y: p.y }))
+        : null;
       
       // 创建与 allRecognizedSpaces 相同格式的空间对象
       const newSpace = {
@@ -963,7 +1014,7 @@ export default {
         area: width * height,
         rotatedWidth: width,
         rotatedHeight: height,
-        vertices: null, // 图形库创建的图形没有 vertices
+        vertices: vertices,
         shapeType: type, // 标记这是从图形库创建的
       };
       
@@ -1014,7 +1065,9 @@ export default {
         }
         this.$set(this.selectedObject, 'label', { ...label });
         this.syncLabelToCanvas(obj);
+        this.syncSpaceFromFabricObject(obj);
         this.canvas.renderAll();
+        this.refreshPreviewIfVisible();
         return;
       }
 
@@ -1092,18 +1145,11 @@ export default {
           }
         }
         
+        this.syncSpaceFromFabricObject(obj);
         this.canvas.renderAll();
         // 确保 selectedObject 响应式更新
         this.$set(this.selectedObject, 'parkingNumber', value || null);
-        
-        // 同步更新 recognizedSpaces 数据 (使用 ID 查找)
-        if (obj.id) {
-            const targetSpace = this.recognizedSpaces.find(s => s.id === obj.id);
-            if (targetSpace) {
-                this.$set(targetSpace, 'number', value);
-                // 强制更新视图（如果是简单属性可能不需要，但 number 涉及列表渲染）
-            }
-        }
+        this.refreshPreviewIfVisible();
         return;
       }
 
@@ -1119,7 +1165,12 @@ export default {
         obj.set(property, isNaN(numValue) ? value : numValue);
       }
 
+      if (typeof obj.setCoords === 'function') {
+        obj.setCoords();
+      }
+      this.syncSpaceFromFabricObject(obj);
       this.canvas.renderAll();
+      this.refreshPreviewIfVisible();
       
       // 更新选中对象的数据
       if (property !== 'fill') {
@@ -1128,21 +1179,6 @@ export default {
         this.selectedObject.fill = value;
       }
 
-      // 同步更新 recognizedSpaces 数据 (通用属性)
-      // 使用 ID 查找，不再依赖 index
-      if (this.selectedObject.fabricObject && this.selectedObject.fabricObject.id) {
-        const id = this.selectedObject.fabricObject.id;
-        const targetSpace = this.recognizedSpaces.find(s => s.id === id);
-        
-        if (targetSpace) {
-          if (property === 'left') {
-            targetSpace.x = numValue;
-          } else if (property === 'top') {
-            targetSpace.y = numValue;
-          }
-          // width/height sync is complex due to scale, ignored for now
-        }
-      }
     },
     // 将附属于矩形的标签同步到画布（创建/更新/移除 Fabric 文本）
     syncLabelToCanvas(obj) {
@@ -1342,31 +1378,14 @@ export default {
 
       const { Rect, Text } = require('fabric');
       
-      // Determine dimensions and position
-      // Prefer rotated dimensions if available and angle is present
-      // 优先使用旋转后的尺寸（如果有）和角度
+      // 坐标优先按中心点渲染，保持与识别数据和 Fabric 对象一致
       let width = space.width;
       let height = space.height;
-      let left = space.x;
-      let top = space.y;
-      let originX = 'left';
-      let originY = 'top';
-      
-      if (space.angle && (space.rotatedWidth || space.rotatedHeight)) {
-          // If we have rotated dimensions, use them
-          // 如果有旋转尺寸，使用它们
-          width = space.rotatedWidth || space.width;
-          height = space.rotatedHeight || space.height;
-          
-          // If using rotated dimensions, we MUST positions by center to be accurate
-          // 如果使用旋转尺寸，必须按中心定位才准确
-          if (space.centerX !== undefined && space.centerY !== undefined) {
-             left = space.centerX;
-             top = space.centerY;
-             originX = 'center';
-             originY = 'center';
-          }
-      }
+      const hasCenter = Number.isFinite(space.centerX) && Number.isFinite(space.centerY);
+      const left = hasCenter ? space.centerX : space.x;
+      const top = hasCenter ? space.centerY : space.y;
+      const originX = hasCenter ? 'center' : 'left';
+      const originY = hasCenter ? 'center' : 'top';
 
       // 创建车位矩形
       const rect = new Rect({
@@ -1423,8 +1442,8 @@ export default {
         const offsetY = this.recognitionConfig.textNumberOffsetY || 0;
         
         text = new Text(space.number, {
-          left: space.x + offsetX,
-          top: space.y + offsetY,
+          left: left + offsetX,
+          top: top + offsetY,
           fontSize: fontSize,
           fill: this.recognitionConfig.textNumberColor || '#000000',
           opacity: this.recognitionConfig.textNumberOpacity !== undefined 
