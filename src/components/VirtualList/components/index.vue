@@ -12,8 +12,8 @@
         <button type="button" @click="scrollTo(0)">
           滚到第 0 行
         </button>
-        <button type="button" @click="scrollTo(10)">
-          滚到第 10 行
+        <button type="button" @click="scrollTo(2000)">
+          滚到第 2000 行
         </button>
         <button type="button" @click="toggleActive">
           切换高亮行（当前 {{ activeIndex == null ? '无' : activeIndex }}）
@@ -131,7 +131,7 @@ export default {
   },
   data() {
     const demoList = [];
-    for (let i = 0; i < 20; i += 1) {
+    for (let i = 0; i < 2000; i += 1) {
       demoList.push({
         id: i,
         name: `项目 ${i + 1}`,
