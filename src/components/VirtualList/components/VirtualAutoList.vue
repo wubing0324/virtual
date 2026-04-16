@@ -524,7 +524,7 @@ export default {
       if (!item) {
         return `vr-fallback-${i}`;
       }
-      const row = item.row;
+      const { row } = item;
       if (row && row.id != null) {
         return `id-${row.id}-v${i}`;
       }
